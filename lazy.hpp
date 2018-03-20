@@ -330,7 +330,7 @@ namespace lazy {
       // TODO: Reverse()
       // TODO: AddressOf()
       // TODO: OrderBy()
-      // TODO: UniqueConsecutive()
+      // TODO: SkipRepeating()
 
       auto begin() {
         return RangeIterator<Range>(range_, /*is_end=*/false);
