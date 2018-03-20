@@ -36,7 +36,7 @@ template <typename Container>
 void RangedBasedForCopy(Container in) {
   Container out;
 
-  for (auto i : lazy::From(in)) {
+  for (typename Container::value_type i : lazy::From(in)) {
     AppendToContainer(out, i);
   }
 
@@ -87,7 +87,7 @@ template <typename Container>
 void RangedBasedForConstRef(Container in) {
   Container out;
 
-  for (const auto& i : lazy::From(in)) {
+  for (typename Container::const_reference i : lazy::From(in)) {
     AppendToContainer(out, i);
   }
 
@@ -149,7 +149,7 @@ TEST_CASE("old-style for") {
 template <typename Container>
 void RangedBasedForMutating(Container in, Container expected) {
   Container c = in;
-  for (auto& i : lazy::From(c)) {
+  for (typename Container::reference i : lazy::From(c)) {
     i = i + i;
   }
 
