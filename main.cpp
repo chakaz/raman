@@ -364,3 +364,28 @@ TEST_CASE("vector: deref (unique_ptr)") {
   REQUIRE(*v[3] == "3!");
   REQUIRE(*v[4] == "4!");
 }
+
+TEST_CASE("vector: AddressOf (const)") {
+  vector<int> in = {1, 2, 3, 4, 5};
+  vector<int*> out;
+
+  for (auto p : lazy::From(in).AddressOf()) {
+    out.push_back(p);
+  }
+
+  REQUIRE(out[0] == &in[0]);
+  REQUIRE(out[1] == &in[1]);
+  REQUIRE(out[2] == &in[2]);
+  REQUIRE(out[3] == &in[3]);
+  REQUIRE(out[4] == &in[4]);
+}
+
+TEST_CASE("vector: AddressOf (mutate)") {
+  vector<int> v = {1, 2, 3, 4, 5};
+
+  for (auto p : lazy::From(v).AddressOf()) {
+    *p = *p - 1;
+  }
+
+  REQUIRE(v == vector<int>{0, 1, 2, 3, 4});
+}

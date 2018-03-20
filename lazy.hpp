@@ -327,8 +327,15 @@ namespace lazy {
             InnerRange(range_, std::move(transformer)));
       }
 
+      auto AddressOf() {
+        using Entry = decltype(std::declval<Range>().CurrentValue());
+        auto transformer = [](Entry entry) { return &entry; };
+        using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
+        return LazyWrapper<InnerRange>(
+            InnerRange(range_, std::move(transformer)));
+      }
+
       // TODO: Reverse()
-      // TODO: AddressOf()
       // TODO: OrderBy()
       // TODO: SkipRepeating()
 
