@@ -94,16 +94,36 @@ TEST_CASE("ranged based for (const-ref)") {
   RangedBasedForConstRef(unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
 }
 
-TEST_CASE("vector: old-style iteration") {
-  vector<int> in = {1, 2, 3, 4, 5, 6, 7};
-  vector<int> out;
+template <typename Container>
+void OldStyleFor(Container in) {
+  Container out;
 
   auto range = lazy::From(in);
   for (auto it = range.begin(), end = range.end(); it != end; ++it) {
-    out.push_back(*it);
+    AppendToContainer(out, *it);
   }
 
   REQUIRE(in == out);
+}
+
+TEST_CASE("old-style for") {
+  // int
+  OldStyleFor(vector<int>{1, 2, 3, 4, 5, 6, 7});
+  OldStyleFor(list<int>{1, 2, 3, 4, 5, 6, 7});
+  OldStyleFor(deque<int>{1, 2, 3, 4, 5, 6, 7});
+  OldStyleFor(set<int>{1, 2, 3, 4, 5, 6, 7});
+  OldStyleFor(unordered_set<int>{1, 2, 3, 4, 5, 6, 7});
+  OldStyleFor(map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
+  OldStyleFor(unordered_map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
+
+  // string
+  OldStyleFor(vector<string>{"one", "two", "three"});
+  OldStyleFor(list<string>{"one", "two", "three"});
+  OldStyleFor(deque<string>{"one", "two", "three"});
+  OldStyleFor(set<string>{"one", "two", "three"});
+  OldStyleFor(unordered_set<string>{"one", "two", "three"});
+  OldStyleFor(map<string, string>{{"one", "1"}, {"two", "2"}});
+  OldStyleFor(unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
 }
 
 template <typename Container>
