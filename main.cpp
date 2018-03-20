@@ -63,6 +63,26 @@ TEST_CASE("ranged based for (copy)") {
   RangedBasedForCopy(unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
 }
 
+TEST_CASE("empty ranges") {
+  // int
+  RangedBasedForCopy(vector<int>());
+  RangedBasedForCopy(list<int>());
+  RangedBasedForCopy(deque<int>());
+  RangedBasedForCopy(set<int>());
+  RangedBasedForCopy(unordered_set<int>());
+  RangedBasedForCopy(map<int, int>());
+  RangedBasedForCopy(unordered_map<int, int>());
+
+  // string
+  RangedBasedForCopy(vector<string>());
+  RangedBasedForCopy(list<string>());
+  RangedBasedForCopy(deque<string>());
+  RangedBasedForCopy(set<string>());
+  RangedBasedForCopy(unordered_set<string>());
+  RangedBasedForCopy(map<string, string>());
+  RangedBasedForCopy(unordered_map<string, string>());
+}
+
 template <typename Container>
 void RangedBasedForConstRef(Container in) {
   Container out;
