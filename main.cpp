@@ -1,6 +1,7 @@
 #include <array>
 #include <functional>
 #include <iostream>
+#include <list>
 #include <map>
 #include <memory>
 #include <set>
@@ -14,20 +15,52 @@
 #include "lazy.hpp"
 
 using std::array;
+using std::deque;
+using std::list;
 using std::map;
+using std::set;
 using std::string;
 using std::unique_ptr;
+using std::unordered_map;
+using std::unordered_set;
 using std::vector;
 
-TEST_CASE("vector: ranged based for (copy)") {
-  vector<int> in = {1, 2, 3, 4, 5, 6, 7};
-  vector<int> out;
+namespace {
+  template <typename Container, typename Value>
+  void AppendToContainer(Container& container, Value&& value) {
+    container.insert(container.end(), std::forward<Value>(value));
+  }
+}
+
+template <typename Container>
+void RangedBasedForCopy(Container in) {
+  Container out;
 
   for (auto i : lazy::From(in)) {
-    out.push_back(i);
+    AppendToContainer(out, i);
   }
 
   REQUIRE(in == out);
+}
+
+TEST_CASE("ranged based for (copy)") {
+  // int
+  RangedBasedForCopy(vector<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForCopy(list<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForCopy(deque<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForCopy(set<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForCopy(unordered_set<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForCopy(map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
+  RangedBasedForCopy(unordered_map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
+
+  // string
+  RangedBasedForCopy(vector<string>{"one", "two", "three"});
+  RangedBasedForCopy(list<string>{"one", "two", "three"});
+  RangedBasedForCopy(deque<string>{"one", "two", "three"});
+  RangedBasedForCopy(set<string>{"one", "two", "three"});
+  RangedBasedForCopy(unordered_set<string>{"one", "two", "three"});
+  RangedBasedForCopy(map<string, string>{{"one", "1"}, {"two", "2"}});
+  RangedBasedForCopy(unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
 }
 
 TEST_CASE("vector: ranged based for (const-ref)") {
