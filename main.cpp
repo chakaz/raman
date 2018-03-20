@@ -63,15 +63,35 @@ TEST_CASE("ranged based for (copy)") {
   RangedBasedForCopy(unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
 }
 
-TEST_CASE("vector: ranged based for (const-ref)") {
-  vector<int> in = {1, 2, 3, 4, 5, 6, 7};
-  vector<int> out;
+template <typename Container>
+void RangedBasedForConstRef(Container in) {
+  Container out;
 
   for (const auto& i : lazy::From(in)) {
-    out.push_back(i);
+    AppendToContainer(out, i);
   }
 
   REQUIRE(in == out);
+}
+
+TEST_CASE("ranged based for (const-ref)") {
+  // int
+  RangedBasedForConstRef(vector<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForConstRef(list<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForConstRef(deque<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForConstRef(set<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForConstRef(unordered_set<int>{1, 2, 3, 4, 5, 6, 7});
+  RangedBasedForConstRef(map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
+  RangedBasedForConstRef(unordered_map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
+
+  // string
+  RangedBasedForConstRef(vector<string>{"one", "two", "three"});
+  RangedBasedForConstRef(list<string>{"one", "two", "three"});
+  RangedBasedForConstRef(deque<string>{"one", "two", "three"});
+  RangedBasedForConstRef(set<string>{"one", "two", "three"});
+  RangedBasedForConstRef(unordered_set<string>{"one", "two", "three"});
+  RangedBasedForConstRef(map<string, string>{{"one", "1"}, {"two", "2"}});
+  RangedBasedForConstRef(unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
 }
 
 TEST_CASE("vector: old-style iteration") {
@@ -86,14 +106,32 @@ TEST_CASE("vector: old-style iteration") {
   REQUIRE(in == out);
 }
 
-TEST_CASE("vector: ranged based for (mutate)") {
-  vector<int> v = {1, 2, 3, 4, 5, 6, 7};
-
-  for (auto& i : lazy::From(v)) {
-    ++i;
+template <typename Container>
+void RangedBasedForMutating(Container in, Container expected) {
+  Container c = in;
+  for (auto& i : lazy::From(c)) {
+    i = i + i;
   }
 
-  REQUIRE(v == vector<int>{2, 3, 4, 5, 6, 7, 8});
+  REQUIRE(c == expected);
+}
+
+TEST_CASE("ranged based for (mutate)") {
+  // int
+  RangedBasedForMutating(vector<int>{1, 2, 3, 4, 5},
+                         vector<int>{2, 4, 6, 8, 10});
+  RangedBasedForMutating(list<int>{1, 2, 3, 4, 5},
+                         list<int>{2, 4, 6, 8, 10});
+  RangedBasedForMutating(deque<int>{1, 2, 3, 4, 5},
+                         deque<int>{2, 4, 6, 8, 10});
+
+  // string
+  RangedBasedForMutating(vector<string>{"one", "two", "three"},
+                         vector<string>{"oneone", "twotwo", "threethree"});
+  RangedBasedForMutating(list<string>{"one", "two", "three"},
+                         list<string>{"oneone", "twotwo", "threethree"});
+  RangedBasedForMutating(deque<string>{"one", "two", "three"},
+                         deque<string>{"oneone", "twotwo", "threethree"});
 }
 
 TEST_CASE("vector: filter head") {
