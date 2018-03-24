@@ -1,21 +1,27 @@
 #ifndef LAZY_CONTAINERS_LIBRARY
 #define LAZY_CONTAINERS_LIBRARY
 
+#include <memory>
+#include <type_traits>
+
 // TODO: this really needs to be better.
 #define ASSERT(x) if (!(x)) { throw 123; }
 
 // Solve:
 // - Force telescoping
-// - Store container?
 // - const/mutable values
 // - std::move everything?
 namespace lazy {
   namespace internal {
+    template <typename Container>
+    using IteratorOf =
+        typename std::decay<decltype(std::declval<Container>().begin())>::type;
+
     template <typename Iterator>
     struct SimpleRange {
-      SimpleRange(Iterator begin, Iterator end)
+      explicit SimpleRange(Iterator begin, Iterator end)
           : begin_(std::move(begin)),
-            current_(std::move(begin_)),
+            current_(begin_),
             end_(std::move(end)) {}
 
       SimpleRange(const SimpleRange&) = default;
@@ -64,10 +70,35 @@ namespace lazy {
       const Iterator end_;
     };
 
+    template <typename Container>
+    struct ContainerOwner {
+      explicit ContainerOwner(Container&& container)
+        : container_(std::move(container)) {}
+
+     protected:
+      Container container_;
+    };
+
+    // Like SimpleRange, but also owns the container. Built for rvalues.
+    template <typename Container>
+    struct SimpleRangeOwner : ContainerOwner<Container>,
+                              SimpleRange<IteratorOf<Container>> {
+      explicit SimpleRangeOwner(Container&& container)
+          : ContainerOwner<Container>(std::move(container)),
+            SimpleRange<IteratorOf<Container>>(
+              ContainerOwner<Container>::container_.begin(),
+              ContainerOwner<Container>::container_.end()) {}
+
+      SimpleRangeOwner(const SimpleRangeOwner&) = default;
+      SimpleRangeOwner& operator=(const SimpleRangeOwner&) = default;
+      SimpleRangeOwner(SimpleRangeOwner&&) = default;
+      SimpleRangeOwner& operator=(SimpleRangeOwner&&) = default;
+    };
+
     // Filtered range.
     template <typename Range, typename Filter>
     struct FilteredRange {
-      FilteredRange(Range range, Filter filter)
+      explicit FilteredRange(Range range, Filter filter)
           : range_(std::move(range)),
             filter_(std::move(filter)) {
         AdvanceToNextNonFilteredIfNeeded();
@@ -139,7 +170,7 @@ namespace lazy {
 
     template <typename Range>
     struct SimpleRangeWrapper {
-      SimpleRangeWrapper(Range range)
+      explicit SimpleRangeWrapper(Range range)
           : range_(std::move(range)) {}
 
       SimpleRangeWrapper(const SimpleRangeWrapper&) = default;
@@ -224,7 +255,7 @@ namespace lazy {
 
     template <typename Range>
     struct RangeIterator {
-      RangeIterator(Range range, bool is_end)
+      explicit RangeIterator(Range range, bool is_end)
           : range_(std::move(range)) {
         if (is_end) {
           range_.GoToEnd();
@@ -280,7 +311,7 @@ namespace lazy {
 
     template <typename Range>
     struct LazyWrapper {
-      LazyWrapper(Range range)
+      explicit LazyWrapper(Range range)
           : range_(std::move(range)) {}
 
       LazyWrapper(const LazyWrapper&) = default;
@@ -367,10 +398,17 @@ namespace lazy {
         Range(std::move(begin), std::move(end)));
   }
 
+  // This version takes objects with lifetimes longer than the wrapper.
+  template <typename Container>
+  auto From(Container& container) {
+    return From(container.begin(), container.end());
+  }
+
+  // This version keeps `container` alive while the wrapper is alive.
   template <typename Container>
   auto From(Container&& container) {
-    // TODO: provide version to take container&& and store it inside Range.
-    return From(container.begin(), container.end());
+    using Range = internal::SimpleRangeOwner<Container>;
+    return internal::LazyWrapper<Range>(Range(std::move(container)));
   }
 }
 

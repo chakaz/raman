@@ -389,3 +389,14 @@ TEST_CASE("vector: AddressOf (mutate)") {
 
   REQUIRE(v == vector<int>{0, 1, 2, 3, 4});
 }
+
+TEST_CASE("vector: rvalue") {
+  auto factory = []() { return vector<int>{1, 2, 3, 4, 5}; };
+  vector<int> out;
+
+  for (auto i : lazy::From(factory())) {
+    out.push_back(i);
+  }
+
+  REQUIRE(out == vector<int>{1, 2, 3, 4, 5});
+}
