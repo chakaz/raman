@@ -1,21 +1,50 @@
 #ifndef LAZY_CONTAINERS_LIBRARY
 #define LAZY_CONTAINERS_LIBRARY
 
+#include <iterator>
 #include <memory>
 #include <type_traits>
 
 // TODO: this really needs to be better.
-#define ASSERT(x) if (!(x)) { throw 123; }
+#define ASSERT(x)                     \
+  if (!(x)) {                         \
+    ::lazy::internal::DieDebugHook(); \
+    throw 123;                        \
+  }
 
 // Solve:
 // - Force telescoping
-// - const/mutable values
-// - std::move everything?
+// - Allow forward (i.e: non-backward) iterators
 namespace lazy {
   namespace internal {
     template <typename Container>
     using IteratorOf =
         typename std::decay<decltype(std::declval<Container>().begin())>::type;
+
+    void DieDebugHook() {}
+
+    // Horrible, horrible hack to allow copy/move assignment of lambdas.
+    // TODO: use existing copy/move if present.
+    template <typename Lambda>
+    struct AssignableLambda {
+      AssignableLambda(Lambda lambda_arg)
+          : lambda(std::move(lambda_arg)) {}
+
+      AssignableLambda(const AssignableLambda&) = default;
+      AssignableLambda(AssignableLambda&&) = default;
+      AssignableLambda& operator=(const AssignableLambda& o) {
+        lambda.~Lambda();
+        new (&lambda) Lambda(o.lambda);
+        return *this;
+      }
+      AssignableLambda& operator=(AssignableLambda&& o) {
+        lambda.~Lambda();
+        new (&lambda) Lambda(std::move(o.lambda));
+        return *this;
+      }
+
+      Lambda lambda;
+    };
 
     template <typename Iterator>
     struct SimpleRange {
@@ -29,7 +58,15 @@ namespace lazy {
       SimpleRange(SimpleRange&&) = default;
       SimpleRange& operator=(SimpleRange&&) = default;
 
-      auto& CurrentValue() const {
+      // Iterator typedefs.
+      using iterator_category = typename Iterator::iterator_category;
+      using value_type = typename Iterator::value_type;
+      using difference_type = typename Iterator::difference_type;
+      using pointer = typename Iterator::pointer;
+      using reference = typename Iterator::reference;
+
+      decltype(auto) CurrentValue() const {
+        ASSERT(!IsAtEnd());
         return *current_;
       }
 
@@ -65,15 +102,15 @@ namespace lazy {
         return current_ == end_;
       }
 
-      const Iterator begin_;
+      Iterator begin_;  // Non-const to support copy-assignment.
       Iterator current_;
-      const Iterator end_;
+      Iterator end_;  // Non-const to support copy-assignment.
     };
 
     template <typename Container>
     struct ContainerOwner {
       explicit ContainerOwner(Container&& container)
-        : container_(std::move(container)) {}
+          : container_(std::move(container)) {}
 
      protected:
       Container container_;
@@ -86,8 +123,8 @@ namespace lazy {
       explicit SimpleRangeOwner(Container&& container)
           : ContainerOwner<Container>(std::move(container)),
             SimpleRange<IteratorOf<Container>>(
-              ContainerOwner<Container>::container_.begin(),
-              ContainerOwner<Container>::container_.end()) {}
+                ContainerOwner<Container>::container_.begin(),
+                ContainerOwner<Container>::container_.end()) {}
 
       SimpleRangeOwner(const SimpleRangeOwner&) = default;
       SimpleRangeOwner& operator=(const SimpleRangeOwner&) = default;
@@ -109,7 +146,14 @@ namespace lazy {
       FilteredRange(FilteredRange&&) = default;
       FilteredRange& operator=(FilteredRange&&) = default;
 
-      auto& CurrentValue() const {
+      // Iterator typedefs.
+      using iterator_category = typename Range::iterator_category;
+      using value_type = typename Range::value_type;
+      using difference_type = typename Range::difference_type;
+      using pointer = typename Range::pointer;
+      using reference = typename Range::reference;
+
+      decltype(auto) CurrentValue() const {
         return range_.CurrentValue();
       }
 
@@ -133,11 +177,22 @@ namespace lazy {
       }
 
       bool Equals(const FilteredRange& o) const {
-        return (range_.Equals(o.range_) && filter_ == o.filter_);
+        return (range_.Equals(o.range_) && filter_.lambda == o.filter_.lambda);
       }
 
       bool IsAtBegin() const {
-        return range_.IsAtBegin();
+        // TODO: There *has* to be a more efficient way without significant
+        // design changes.
+        if (range_.IsAtBegin()) {
+          return true;
+        }
+
+        Range tmp = range_;
+        tmp.Retreat();
+        while (!tmp.IsAtBegin() && !filter_.lambda(tmp.CurrentValue())) {
+          tmp.Retreat();
+        }
+        return tmp.IsAtBegin();
       }
 
       bool IsAtEnd() const {
@@ -147,25 +202,19 @@ namespace lazy {
      private:
       // Will not advance if current element is not filtered.
       void AdvanceToNextNonFilteredIfNeeded() {
-        while (!IsAtEnd() && !filter_(range_.CurrentValue())) {
+        while (!IsAtEnd() && !filter_.lambda(range_.CurrentValue())) {
           range_.Advance();
-          if (range_.IsAtEnd()) {
-            break;
-          }
         }
       }
 
       void RetreatToPreviousNonFilteredIfNeeded() {
-        while (IsAtBegin() && !filter_(range_.CurrentValue())) {
+        while (!IsAtBegin() && !filter_.lambda(range_.CurrentValue())) {
           range_.Retreat();
-          if (range_.IsAtBegin()) {
-            break;
-          }
         }
       }
 
       Range range_;
-      Filter filter_;
+      AssignableLambda<Filter> filter_;
     };
 
     template <typename Range>
@@ -177,6 +226,13 @@ namespace lazy {
       SimpleRangeWrapper& operator=(const SimpleRangeWrapper&) = default;
       SimpleRangeWrapper(SimpleRangeWrapper&&) = default;
       SimpleRangeWrapper& operator=(SimpleRangeWrapper&&) = default;
+
+      // Iterator typedefs.
+      using iterator_category = typename Range::iterator_category;
+      using value_type = typename Range::value_type;
+      using difference_type = typename Range::difference_type;
+      using pointer = typename Range::pointer;
+      using reference = typename Range::reference;
 
       void GoToBegin() {
         range_.GoToBegin();
@@ -208,7 +264,7 @@ namespace lazy {
 
     template <typename Range, typename Transformer>
     struct ByValueTransformerRange : SimpleRangeWrapper<Range> {
-      ByValueTransformerRange(Range range, Transformer transformer)
+      explicit ByValueTransformerRange(Range range, Transformer transformer)
           : SimpleRangeWrapper<Range>(std::move(range)),
             transformer_(std::move(transformer)) {}
 
@@ -218,21 +274,22 @@ namespace lazy {
       ByValueTransformerRange& operator=(ByValueTransformerRange&&) = default;
 
       auto CurrentValue() const {
-        return transformer_(this->range_.CurrentValue());
+        return transformer_.lambda(this->range_.CurrentValue());
       }
 
       bool Equals(const ByValueTransformerRange& o) const {
-        return (this->range_.Equals(o.range_) && transformer_ == o.transformer_);
+        return (this->range_.Equals(o.range_) &&
+                transformer_.lambda == o.transformer_.lambda);
       }
 
      private:
-      Transformer transformer_;
+      AssignableLambda<Transformer> transformer_;
     };
 
     // Transformer range.
     template <typename Range, typename Transformer>
     struct ByRefTransformerRange : SimpleRangeWrapper<Range> {
-      ByRefTransformerRange(Range range, Transformer transformer)
+      explicit ByRefTransformerRange(Range range, Transformer transformer)
           : SimpleRangeWrapper<Range>(std::move(range)),
             transformer_(std::move(transformer)) {}
 
@@ -242,19 +299,107 @@ namespace lazy {
       ByRefTransformerRange& operator=(ByRefTransformerRange&&) = default;
 
       decltype(auto) CurrentValue() const {
-        return transformer_(this->range_.CurrentValue());
+        return transformer_.lambda(this->range_.CurrentValue());
       }
 
       bool Equals(const ByRefTransformerRange& o) const {
-        return (this->range_.Equals(o.range_) && transformer_ == o.transformer_);
+        return (this->range_.Equals(o.range_) &&
+                transformer_.lambda == o.transformer_.lambda);
       }
 
      private:
-      Transformer transformer_;
+      AssignableLambda<Transformer> transformer_;
+    };
+
+    template <typename Range>
+    struct ReverseRange {
+      explicit ReverseRange(Range range)
+          : range_(std::move(range)),
+            last_element_(range_) {
+        last_element_.GoToEnd();
+        if (!last_element_.IsAtBegin()) {
+          last_element_.Retreat();
+        }
+        this->GoToBegin();
+      }
+
+      ReverseRange(const ReverseRange&) = default;
+      ReverseRange& operator=(const ReverseRange&) = default;
+      ReverseRange(ReverseRange&&) = default;
+      ReverseRange& operator=(ReverseRange&&) = default;
+
+      // Iterator typedefs.
+      using iterator_category = typename Range::iterator_category;
+      using value_type = typename Range::value_type;
+      using difference_type = typename Range::difference_type;
+      using pointer = typename Range::pointer;
+      using reference = typename Range::reference;
+
+      decltype(auto) CurrentValue() const {
+        ASSERT(!IsAtEnd());
+        return range_.CurrentValue();
+      }
+
+      void GoToBegin() {
+        range_ = last_element_;
+        is_at_rend_ = range_.IsAtBegin();
+      }
+
+      void GoToEnd() {
+        range_.GoToBegin();
+        is_at_rend_ = true;
+      }
+
+      void Advance() {
+        ASSERT(!IsAtEnd());
+        if (range_.IsAtBegin()) {
+          is_at_rend_ = true;
+        } else {
+          range_.Retreat();
+        }
+      }
+
+      void Retreat() {
+        ASSERT(!IsAtBegin());
+        if (is_at_rend_) {
+          is_at_rend_ = false;
+        } else {
+          range_.Advance();
+        }
+      }
+
+      bool Equals(const ReverseRange& o) const {
+        return (range_.Equals(o.range_) &&
+                is_at_rend_ == o.is_at_rend_ &&
+                last_element_.Equals(o.last_element_));
+      }
+
+      bool IsAtBegin() const {
+        return range_.Equals(last_element_);
+      }
+
+      bool IsAtEnd() const {
+        return is_at_rend_;
+      }
+
+     private:
+      Range range_;
+
+      // Range in a state pointing to one before end if exists.
+      Range last_element_;
+
+      // Are we at one-before-begin bit.
+      bool is_at_rend_ = false;
     };
 
     template <typename Range>
     struct RangeIterator {
+      using iterator_category = typename Range::iterator_category;
+      using value_type = typename Range::value_type;
+      using difference_type = typename Range::difference_type;
+      using pointer = typename Range::pointer;
+      using reference = typename Range::reference;
+
       explicit RangeIterator(Range range, bool is_end)
           : range_(std::move(range)) {
         if (is_end) {
@@ -352,7 +497,7 @@ namespace lazy {
 
       auto Deref() {
         using Entry = decltype(std::declval<Range>().CurrentValue());
-        auto transformer = [](const Entry& entry) -> auto& { return *entry; };
+        auto transformer = [](Entry& entry) -> auto& { return *entry; };
         using InnerRange = ByRefTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(range_, std::move(transformer)));
@@ -360,15 +505,22 @@ namespace lazy {
 
       auto AddressOf() {
         using Entry = decltype(std::declval<Range>().CurrentValue());
-        auto transformer = [](Entry entry) { return &entry; };
+        auto transformer = [](Entry& entry) { return &entry; };
         using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(range_, std::move(transformer)));
       }
 
-      // TODO: Reverse()
+      auto Reverse() {
+        using InnerRange = ReverseRange<Range>;
+        return LazyWrapper<InnerRange>(InnerRange(range_));
+      }
+
+      // TODO: rename: Equals() -> operator==
+      // TODO: print what's wrong in ASSERT()
       // TODO: OrderBy()
       // TODO: SkipRepeating()
+      // TODO: OrderByUnique()
 
       auto begin() {
         return RangeIterator<Range>(range_, /*is_end=*/false);

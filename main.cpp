@@ -400,3 +400,88 @@ TEST_CASE("vector: rvalue") {
 
   REQUIRE(out == vector<int>{1, 2, 3, 4, 5});
 }
+
+template <typename Container>
+void SimpleReverse(Container in) {
+  Container out;
+  Container expected(in.rbegin(), in.rend());
+
+  for (auto i : lazy::From(in).Reverse()) {
+    AppendToContainer(out, i);
+  }
+
+  REQUIRE(out == expected);
+}
+
+TEST_CASE("simple reverse") {
+  // int
+  SimpleReverse(vector<int>{1, 2, 3, 4, 5, 6, 7});
+  SimpleReverse(list<int>{1, 2, 3, 4, 5, 6, 7});
+  SimpleReverse(deque<int>{1, 2, 3, 4, 5, 6, 7});
+
+  // string
+  SimpleReverse(vector<string>{"one", "two", "three"});
+  SimpleReverse(list<string>{"one", "two", "three"});
+  SimpleReverse(deque<string>{"one", "two", "three"});
+
+  // empty
+  SimpleReverse(vector<int>{});
+  SimpleReverse(list<int>{});
+  SimpleReverse(deque<int>{});
+  SimpleReverse(vector<string>{});
+  SimpleReverse(list<string>{});
+  SimpleReverse(deque<string>{});
+}
+
+TEST_CASE("vector: filter & reverse") {
+  vector<int> in = {1, 2, 3, 4, 5, 6};
+  vector<int> out;
+
+  for (int i : lazy::From(in)
+                     .Where([](int i) { return i > 2; })
+                     .Reverse()) {
+    out.push_back(i);
+  }
+
+  REQUIRE(out == vector<int>{6, 5, 4, 3});
+}
+
+template <typename Container>
+void EmptyRangeAllFeatures() {
+  Container in, out;
+
+  for (auto i : lazy::From(in)
+                      .Reverse()
+                      .Where([](int i) { return i > 2; })
+                      .Reverse()
+                      .Where([](int i) { return i < 20; })
+                      .Reverse()) {
+    AppendToContainer(out, i);
+  }
+
+  REQUIRE(out == Container());
+}
+
+TEST_CASE("empty range") {
+  EmptyRangeAllFeatures<vector<int>>();
+  EmptyRangeAllFeatures<list<int>>();
+  EmptyRangeAllFeatures<deque<int>>();
+  EmptyRangeAllFeatures<set<int>>();
+}
+
+TEST_CASE("vector: all features") {
+  vector<int> in = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  vector<int> out;
+
+  for (int i : lazy::From(in)
+                     .Where([](int i) { return i > 2; })
+                     .Reverse()
+                     .Transform([](int i) { return i * 2; })
+                     .Where([](int i) { return i < 18; })
+                     .Reverse()) {
+    out.push_back(i);
+  }
+
+  REQUIRE(out == vector<int>{6, 8, 10, 12, 14, 16});
+}
+
