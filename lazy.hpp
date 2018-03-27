@@ -88,7 +88,7 @@ namespace lazy {
         --current_;
       }
 
-      bool Equals(const SimpleRange& o) const {
+      bool operator==(const SimpleRange& o) const {
         return (begin_ == o.begin_ &&
                 end_ == o.end_ &&
                 current_ == o.current_);
@@ -176,8 +176,8 @@ namespace lazy {
         RetreatToPreviousNonFilteredIfNeeded();
       }
 
-      bool Equals(const FilteredRange& o) const {
-        return (range_.Equals(o.range_) && filter_.lambda == o.filter_.lambda);
+      bool operator==(const FilteredRange& o) const {
+        return (range_ == o.range_ && filter_.lambda == o.filter_.lambda);
       }
 
       bool IsAtBegin() const {
@@ -277,8 +277,8 @@ namespace lazy {
         return transformer_.lambda(this->range_.CurrentValue());
       }
 
-      bool Equals(const ByValueTransformerRange& o) const {
-        return (this->range_.Equals(o.range_) &&
+      bool operator==(const ByValueTransformerRange& o) const {
+        return (this->range_ == o.range_ &&
                 transformer_.lambda == o.transformer_.lambda);
       }
 
@@ -302,8 +302,8 @@ namespace lazy {
         return transformer_.lambda(this->range_.CurrentValue());
       }
 
-      bool Equals(const ByRefTransformerRange& o) const {
-        return (this->range_.Equals(o.range_) &&
+      bool operator==(const ByRefTransformerRange& o) const {
+        return (this->range_ == o.range_ &&
                 transformer_.lambda == o.transformer_.lambda);
       }
 
@@ -368,14 +368,14 @@ namespace lazy {
         }
       }
 
-      bool Equals(const ReverseRange& o) const {
-        return (range_.Equals(o.range_) &&
+      bool operator==(const ReverseRange& o) const {
+        return (range_ == o.range_ &&
                 is_at_rend_ == o.is_at_rend_ &&
-                last_element_.Equals(o.last_element_));
+                last_element_ == o.last_element_);
       }
 
       bool IsAtBegin() const {
-        return range_.Equals(last_element_);
+        return range_ == last_element_;
       }
 
       bool IsAtEnd() const {
@@ -443,7 +443,7 @@ namespace lazy {
       }
 
       bool operator==(const RangeIterator& o) const {
-        return range_.Equals(o.range_);
+        return range_ == o.range_;
       }
 
       bool operator!=(const RangeIterator& o) const {
@@ -516,7 +516,6 @@ namespace lazy {
         return LazyWrapper<InnerRange>(InnerRange(range_));
       }
 
-      // TODO: rename: Equals() -> operator==
       // TODO: print what's wrong in ASSERT()
       // TODO: OrderBy()
       // TODO: SkipRepeating()
