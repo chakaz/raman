@@ -162,8 +162,11 @@ namespace lazy {
     struct FilteredRange {
       explicit FilteredRange(Range range, Filter filter)
           : range_(std::move(range)),
+            unfiltered_begin_(range_),
             filter_(std::move(filter)) {
+        range_.GoToBegin();
         AdvanceToNextNonFilteredIfNeeded();
+        unfiltered_begin_ = range_;
       }
 
       FilteredRange(const FilteredRange&) = default;
@@ -183,8 +186,7 @@ namespace lazy {
       }
 
       void GoToBegin() {
-        range_.GoToBegin();
-        AdvanceToNextNonFilteredIfNeeded();
+        range_ = unfiltered_begin_;
       }
 
       void GoToEnd() {
@@ -206,18 +208,7 @@ namespace lazy {
       }
 
       bool IsAtBegin() const {
-        // TODO: There *has* to be a more efficient way without significant
-        // design changes.
-        if (range_.IsAtBegin()) {
-          return true;
-        }
-
-        Range tmp = range_;
-        tmp.Retreat();
-        while (!tmp.IsAtBegin() && !filter_.functor(tmp.CurrentValue())) {
-          tmp.Retreat();
-        }
-        return tmp.IsAtBegin();
+        return range_ == unfiltered_begin_;
       }
 
       bool IsAtEnd() const {
@@ -239,6 +230,7 @@ namespace lazy {
       }
 
       Range range_;
+      Range unfiltered_begin_;
       AssignableFunctor<Filter> filter_;
     };
 
