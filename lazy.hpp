@@ -17,33 +17,58 @@
 // - Allow forward (i.e: non-backward) iterators
 namespace lazy {
   namespace internal {
+    void DieDebugHook() {}
+
     template <typename Container>
     using IteratorOf =
         typename std::decay<decltype(std::declval<Container>().begin())>::type;
 
-    void DieDebugHook() {}
+    template <typename T>
+    constexpr bool IsAssignable() {
+      return std::is_copy_assignable<T>::value;
+    }
 
-    // Horrible, horrible hack to allow copy/move assignment of lambdas.
-    // TODO: use existing copy/move if present.
-    template <typename Lambda>
-    struct AssignableLambda {
-      AssignableLambda(Lambda lambda_arg)
-          : lambda(std::move(lambda_arg)) {}
+    // Horrible, horrible hack to allow copy/move assignment of functors, which
+    // prior to C++20 can't be assigned.
+    template <typename Functor, typename = void>
+    struct AssignableFunctor;
 
-      AssignableLambda(const AssignableLambda&) = default;
-      AssignableLambda(AssignableLambda&&) = default;
-      AssignableLambda& operator=(const AssignableLambda& o) {
-        lambda.~Lambda();
-        new (&lambda) Lambda(o.lambda);
+    template <typename Functor>
+    struct AssignableFunctor<
+        Functor,
+        typename std::enable_if<IsAssignable<Functor>()>::type> {
+      AssignableFunctor(Functor functor_arg)
+          : functor(std::move(functor_arg)) {}
+
+      AssignableFunctor(const AssignableFunctor&) = default;
+      AssignableFunctor(AssignableFunctor&&) = default;
+      AssignableFunctor& operator=(const AssignableFunctor& o) = default;
+      AssignableFunctor& operator=(AssignableFunctor&& o) = default;
+
+      Functor functor;
+    };
+
+    template <typename Functor>
+    struct AssignableFunctor<
+        Functor,
+        typename std::enable_if<!IsAssignable<Functor>()>::type> {
+      AssignableFunctor(Functor functor_arg)
+          : functor(std::move(functor_arg)) {}
+
+      AssignableFunctor(const AssignableFunctor&) = default;
+      AssignableFunctor(AssignableFunctor&&) = default;
+      AssignableFunctor& operator=(const AssignableFunctor& o) {
+        functor.~Functor();
+        new (&functor) Functor(o.functor);
         return *this;
       }
-      AssignableLambda& operator=(AssignableLambda&& o) {
-        lambda.~Lambda();
-        new (&lambda) Lambda(std::move(o.lambda));
+      AssignableFunctor& operator=(AssignableFunctor&& o) {
+        functor.~Functor();
+        new (&functor) Functor(std::move(o.functor));
         return *this;
       }
 
-      Lambda lambda;
+      Functor functor;
     };
 
     template <typename Iterator>
@@ -177,7 +202,7 @@ namespace lazy {
       }
 
       bool operator==(const FilteredRange& o) const {
-        return (range_ == o.range_ && filter_.lambda == o.filter_.lambda);
+        return (range_ == o.range_ && filter_.functor == o.filter_.functor);
       }
 
       bool IsAtBegin() const {
@@ -189,7 +214,7 @@ namespace lazy {
 
         Range tmp = range_;
         tmp.Retreat();
-        while (!tmp.IsAtBegin() && !filter_.lambda(tmp.CurrentValue())) {
+        while (!tmp.IsAtBegin() && !filter_.functor(tmp.CurrentValue())) {
           tmp.Retreat();
         }
         return tmp.IsAtBegin();
@@ -202,19 +227,19 @@ namespace lazy {
      private:
       // Will not advance if current element is not filtered.
       void AdvanceToNextNonFilteredIfNeeded() {
-        while (!IsAtEnd() && !filter_.lambda(range_.CurrentValue())) {
+        while (!IsAtEnd() && !filter_.functor(range_.CurrentValue())) {
           range_.Advance();
         }
       }
 
       void RetreatToPreviousNonFilteredIfNeeded() {
-        while (!IsAtBegin() && !filter_.lambda(range_.CurrentValue())) {
+        while (!IsAtBegin() && !filter_.functor(range_.CurrentValue())) {
           range_.Retreat();
         }
       }
 
       Range range_;
-      AssignableLambda<Filter> filter_;
+      AssignableFunctor<Filter> filter_;
     };
 
     template <typename Range>
@@ -274,16 +299,16 @@ namespace lazy {
       ByValueTransformerRange& operator=(ByValueTransformerRange&&) = default;
 
       auto CurrentValue() const {
-        return transformer_.lambda(this->range_.CurrentValue());
+        return transformer_.functor(this->range_.CurrentValue());
       }
 
       bool operator==(const ByValueTransformerRange& o) const {
         return (this->range_ == o.range_ &&
-                transformer_.lambda == o.transformer_.lambda);
+                transformer_.functor == o.transformer_.functor);
       }
 
      private:
-      AssignableLambda<Transformer> transformer_;
+      AssignableFunctor<Transformer> transformer_;
     };
 
     // Transformer range.
@@ -299,16 +324,16 @@ namespace lazy {
       ByRefTransformerRange& operator=(ByRefTransformerRange&&) = default;
 
       decltype(auto) CurrentValue() const {
-        return transformer_.lambda(this->range_.CurrentValue());
+        return transformer_.functor(this->range_.CurrentValue());
       }
 
       bool operator==(const ByRefTransformerRange& o) const {
         return (this->range_ == o.range_ &&
-                transformer_.lambda == o.transformer_.lambda);
+                transformer_.functor == o.transformer_.functor);
       }
 
      private:
-      AssignableLambda<Transformer> transformer_;
+      AssignableFunctor<Transformer> transformer_;
     };
 
     template <typename Range>

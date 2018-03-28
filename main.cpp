@@ -485,3 +485,18 @@ TEST_CASE("vector: all features") {
   REQUIRE(out == vector<int>{6, 8, 10, 12, 14, 16});
 }
 
+struct FilterSmallerThan2 {
+  bool operator()(int i) const { return i > 2; }
+  bool operator==(const FilterSmallerThan2& o) const { return true; }
+};
+TEST_CASE("vector: non-lambda filter") {
+  vector<int> in = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  vector<int> out;
+
+  for (int i : lazy::From(in)
+                     .Where(FilterSmallerThan2())) {
+    out.push_back(i);
+  }
+
+  REQUIRE(out == vector<int>{3, 4, 5, 6, 7, 8, 9, 10});
+}
