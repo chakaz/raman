@@ -514,3 +514,8 @@ TEST_CASE("vector: non-lambda filter") {
 
   REQUIRE(out == vector<int>{3, 4, 5, 6, 7, 8, 9, 10});
 }
+
+// TODO: test:
+// - const ranges
+// - ranges with const elements
+// - const ranges with const elements
