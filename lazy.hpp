@@ -512,9 +512,9 @@ namespace lazy {
             InnerRange(range_, std::move(transformer)));
       }
 
-      auto Deref() {
+      auto Dereference() {
         using Entry = decltype(std::declval<Range>().CurrentValue());
-        auto transformer = [](Entry& entry) -> auto& { return *entry; };
+        auto transformer = [](Entry entry) -> auto& { return *entry; };
         using InnerRange = ByRefTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(range_, std::move(transformer)));

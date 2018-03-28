@@ -328,7 +328,7 @@ TEST_CASE("vector: deref (const)") {
   vector<int*> in = {&data[0], &data[1], &data[2], &data[3], &data[4]};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Deref()) {
+  for (auto i : lazy::From(in).Dereference()) {
     out.push_back(i);
   }
 
@@ -339,7 +339,7 @@ TEST_CASE("vector: deref (mutate)") {
   array<int, 5> data = {0, 1, 2, 3, 4};
   vector<int*> v = {&data[0], &data[1], &data[2], &data[3], &data[4]};
 
-  for (auto& i : lazy::From(v).Deref()) {
+  for (auto& i : lazy::From(v).Dereference()) {
     ++i;
   }
 
@@ -354,7 +354,7 @@ TEST_CASE("vector: deref (unique_ptr)") {
   v.push_back(std::make_unique<string>("3"));
   v.push_back(std::make_unique<string>("4"));
 
-  for (auto& s : lazy::From(v).Deref()) {
+  for (auto& s : lazy::From(v).Dereference()) {
     s += "!";
   }
 
@@ -385,6 +385,16 @@ TEST_CASE("vector: AddressOf (mutate)") {
 
   for (auto p : lazy::From(v).AddressOf()) {
     *p = *p - 1;
+  }
+
+  REQUIRE(v == vector<int>{0, 1, 2, 3, 4});
+}
+
+TEST_CASE("vector: AddressOf, Dereference") {
+  vector<int> v = {1, 2, 3, 4, 5};
+
+  for (auto& p : lazy::From(v).AddressOf().Dereference()) {
+    --p;
   }
 
   REQUIRE(v == vector<int>{0, 1, 2, 3, 4});
@@ -455,6 +465,8 @@ void EmptyRangeAllFeatures() {
                       .Where([](int i) { return i > 2; })
                       .Reverse()
                       .Where([](int i) { return i < 20; })
+                      .AddressOf()
+                      .Dereference()
                       .Reverse()) {
     AppendToContainer(out, i);
   }
@@ -476,6 +488,8 @@ TEST_CASE("vector: all features") {
   for (int i : lazy::From(in)
                      .Where([](int i) { return i > 2; })
                      .Reverse()
+                     .AddressOf()
+                     .Dereference()
                      .Transform([](int i) { return i * 2; })
                      .Where([](int i) { return i < 18; })
                      .Reverse()) {
