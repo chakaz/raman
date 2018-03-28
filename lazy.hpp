@@ -23,6 +23,13 @@ namespace lazy {
     using IteratorOf =
         typename std::decay<decltype(std::declval<Container>().begin())>::type;
 
+    template <typename Range>
+    using ReferenceType = decltype(std::declval<Range>().CurrentValue());
+
+    template <typename Range>
+    using ValueType = typename std::remove_reference<
+        decltype(std::declval<Range>().CurrentValue())>::type;
+
     template <typename T>
     constexpr bool IsAssignable() {
       return std::is_copy_assignable<T>::value;
@@ -495,16 +502,16 @@ namespace lazy {
       }
 
       auto Keys() {
-        using Entry = decltype(std::declval<Range>().CurrentValue());
-        auto transformer = [](const Entry& entry) { return entry.first; };
+        auto transformer = [](const ValueType<Range>& entry) {
+          return entry.first;
+        };
         using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(range_, std::move(transformer)));
       }
 
       auto Values() {
-        using Entry = decltype(std::declval<Range>().CurrentValue());
-        auto transformer = [](const Entry& entry) -> auto& {
+        auto transformer = [](ValueType<Range>& entry) -> auto& {
           return entry.second;
         };
         using InnerRange = ByRefTransformerRange<Range, decltype(transformer)>;
@@ -513,16 +520,16 @@ namespace lazy {
       }
 
       auto Dereference() {
-        using Entry = decltype(std::declval<Range>().CurrentValue());
-        auto transformer = [](Entry entry) -> auto& { return *entry; };
+        auto transformer = [](const ValueType<Range>& entry) -> auto& {
+          return *entry;
+        };
         using InnerRange = ByRefTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(range_, std::move(transformer)));
       }
 
       auto AddressOf() {
-        using Entry = decltype(std::declval<Range>().CurrentValue());
-        auto transformer = [](Entry& entry) { return &entry; };
+        auto transformer = [](ValueType<Range>& entry) { return &entry; };
         using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(range_, std::move(transformer)));
