@@ -1,6 +1,7 @@
 #ifndef LAZY_CONTAINERS_LIBRARY
 #define LAZY_CONTAINERS_LIBRARY
 
+#include <algorithm>
 #include <iterator>
 #include <memory>
 #include <type_traits>
@@ -13,7 +14,7 @@
   }
 
 // Solve:
-// - Force telescoping
+// - Force telescoping (avoid re-use)
 // - Allow forward (i.e: non-backward) iterators
 namespace lazy {
   namespace internal {
@@ -335,6 +336,36 @@ namespace lazy {
       AssignableFunctor<Transformer> transformer_;
     };
 
+    template <typename T>
+    struct DereferenceFunctor {
+      DereferenceFunctor() = default;
+      DereferenceFunctor(const DereferenceFunctor&) = default;
+      DereferenceFunctor& operator=(const DereferenceFunctor&) = default;
+
+      decltype(auto) operator()(const T& t) const {
+        return *t;
+      }
+
+      bool operator==(const DereferenceFunctor& o) const {
+        return true;
+      }
+    };
+
+    template <typename Range>
+    struct DereferenceRange
+        : ByRefTransformerRange<Range,
+                                DereferenceFunctor<ReferenceType<Range>>> {
+      explicit DereferenceRange(Range range)
+          : ByRefTransformerRange<Range,
+                                  DereferenceFunctor<ReferenceType<Range>>>(
+                std::move(range), DereferenceFunctor<ReferenceType<Range>>()) {}
+
+      DereferenceRange(const DereferenceRange&) = default;
+      DereferenceRange& operator=(const DereferenceRange&) = default;
+      DereferenceRange(DereferenceRange&&) = default;
+      DereferenceRange& operator=(DereferenceRange&&) = default;
+    };
+
     template <typename Range>
     struct ReverseRange {
       explicit ReverseRange(Range range)
@@ -520,12 +551,8 @@ namespace lazy {
       }
 
       auto Dereference() {
-        auto transformer = [](const ValueType<Range>& entry) -> auto& {
-          return *entry;
-        };
-        using InnerRange = ByRefTransformerRange<Range, decltype(transformer)>;
-        return LazyWrapper<InnerRange>(
-            InnerRange(range_, std::move(transformer)));
+        using InnerRange = DereferenceRange<Range>;
+        return LazyWrapper<InnerRange>(InnerRange(range_));
       }
 
       auto AddressOf() {
@@ -540,10 +567,33 @@ namespace lazy {
         return LazyWrapper<InnerRange>(InnerRange(range_));
       }
 
+      // Iterates over the range in a sorted fashion, while returning a
+      // reference to each of the values of the original list. You may modify
+      // values unless otherwise limited.
+      // TODO: This does not yet occur lazily.
+      auto Sort() {
+        return Sort(std::less<ValueType<Range>>());
+      }
+      template <typename Comparator>
+      auto Sort(Comparator comparator) {
+        using Pointer = ValueType<Range>*;
+        using TmpVector = std::vector<Pointer>;
+        TmpVector v;
+        for (auto& value : *this) {
+          v.push_back(&value);
+        }
+        std::sort(v.begin(), v.end(), [&](Pointer a, Pointer b) {
+          return comparator(*a, *b);
+        });
+
+        using OwnerRange = internal::SimpleRangeOwner<TmpVector>;
+        using DerefRange = internal::DereferenceRange<OwnerRange>;
+        return LazyWrapper<DerefRange>(DerefRange(OwnerRange(std::move(v))));
+      }
+
       // TODO: print what's wrong in ASSERT()
-      // TODO: OrderBy()
       // TODO: SkipRepeating()
-      // TODO: OrderByUnique()
+      // TODO: SortUnique()
 
       auto begin() {
         return RangeIterator<Range>(range_, /*is_end=*/false);

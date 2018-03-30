@@ -467,6 +467,7 @@ void EmptyRangeAllFeatures() {
                       .Where([](int i) { return i < 20; })
                       .AddressOf()
                       .Dereference()
+                      .Sort()
                       .Reverse()) {
     AppendToContainer(out, i);
   }
@@ -482,11 +483,12 @@ TEST_CASE("empty range") {
 }
 
 TEST_CASE("vector: all features") {
-  vector<int> in = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  vector<int> in = {1, 3, 2, 5, 6, 4, 7, 8, 9, 10};
   vector<int> out;
 
   for (int i : lazy::From(in)
                      .Where([](int i) { return i > 2; })
+                     .Sort()
                      .Reverse()
                      .AddressOf()
                      .Dereference()
@@ -515,7 +517,37 @@ TEST_CASE("vector: non-lambda filter") {
   REQUIRE(out == vector<int>{3, 4, 5, 6, 7, 8, 9, 10});
 }
 
+template <typename Container>
+void TestSort(const Container& container) {
+  Container in = container;
+  Container out;
+
+  Container expectedOut = container;
+  std::sort(expectedOut.begin(), expectedOut.end());
+  Container expectedModified = container;
+  for (auto& value : expectedModified) {
+    value += value;
+  }
+
+  for (auto& value : lazy::From(in)
+                           .Sort()) {
+    AppendToContainer(out, value);
+    value += value;
+  }
+
+  REQUIRE(in == expectedModified);
+  REQUIRE(out == expectedOut);
+}
+
+TEST_CASE("Sort") {
+  TestSort<vector<int>>({1, 3, 2, 5, 4});
+  TestSort<deque<int>>({1, 3, 2, 5, 4});
+  TestSort<vector<string>>({"1=one", "3=three", "2=two"});
+  TestSort<deque<string>>({"1=one", "3=three", "2=two"});
+}
+
 // TODO: test:
 // - const ranges
 // - ranges with const elements
 // - const ranges with const elements
+// - From(initializer-list)
