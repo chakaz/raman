@@ -530,14 +530,15 @@ namespace lazy {
       template <typename Filter>
       auto Where(Filter filter) {
         using InnerRange = FilteredRange<Range, Filter>;
-        return LazyWrapper<InnerRange>(InnerRange(range_, std::move(filter)));
+        return LazyWrapper<InnerRange>(InnerRange(std::move(range_),
+                                                  std::move(filter)));
       }
 
       template <typename Transformer>
       auto Transform(Transformer transformer) {
         using InnerRange = ByValueTransformerRange<Range, Transformer>;
         return LazyWrapper<InnerRange>(
-            InnerRange(range_, std::move(transformer)));
+            InnerRange(std::move(range_), std::move(transformer)));
       }
 
       auto Keys() {
@@ -546,7 +547,7 @@ namespace lazy {
         };
         using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
-            InnerRange(range_, std::move(transformer)));
+            InnerRange(std::move(range_), std::move(transformer)));
       }
 
       auto Values() {
@@ -555,24 +556,24 @@ namespace lazy {
         };
         using InnerRange = ByRefTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
-            InnerRange(range_, std::move(transformer)));
+            InnerRange(std::move(range_), std::move(transformer)));
       }
 
       auto Dereference() {
         using InnerRange = DereferenceRange<Range>;
-        return LazyWrapper<InnerRange>(InnerRange(range_));
+        return LazyWrapper<InnerRange>(InnerRange(std::move(range_)));
       }
 
       auto AddressOf() {
         auto transformer = [](ValueType<Range>& entry) { return &entry; };
         using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
-            InnerRange(range_, std::move(transformer)));
+            InnerRange(std::move(range_), std::move(transformer)));
       }
 
       auto Reverse() {
         using InnerRange = ReverseRange<Range>;
-        return LazyWrapper<InnerRange>(InnerRange(range_));
+        return LazyWrapper<InnerRange>(InnerRange(std::move(range_)));
       }
 
       // Iterates over the range in a sorted fashion, while returning a
@@ -611,7 +612,7 @@ namespace lazy {
 
         using DerefRange = DereferenceRange<OwnerRange>;
         return LazyWrapper<DerefRange>(DerefRange(OwnerRange(
-            std::move(v), range_)));
+            std::move(v), std::move(range_))));
       }
 
       // TODO: print what's wrong in ASSERT()
