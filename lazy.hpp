@@ -2,16 +2,20 @@
 #define LAZY_CONTAINERS_LIBRARY
 
 #include <algorithm>
+#include <exception>
 #include <iterator>
 #include <memory>
 #include <type_traits>
 
-// TODO: this really needs to be better.
-#define ASSERT(x)                     \
+#ifdef LAZY_DISABLE_RUNTIME_ASSERT
+#  define LAZY_ASSERT(x)
+#else
+#  define LAZY_ASSERT(x)              \
   if (!(x)) {                         \
     ::lazy::internal::DieDebugHook(); \
-    throw 123;                        \
+    throw std::runtime_error(#x);     \
   }
+#endif
 
 // Solve:
 // - Force telescoping (avoid re-use)
@@ -99,7 +103,7 @@ namespace lazy {
       using reference = typename Iterator::reference;
 
       decltype(auto) CurrentValue() const {
-        ASSERT(!IsAtEnd());
+        LAZY_ASSERT(!IsAtEnd());
         return *current_;
       }
 
@@ -112,12 +116,12 @@ namespace lazy {
       }
 
       void Advance() {
-        ASSERT(current_ != end_);
+        LAZY_ASSERT(current_ != end_);
         ++current_;
       }
 
       void Retreat() {
-        ASSERT(current_ != begin_);
+        LAZY_ASSERT(current_ != begin_);
         --current_;
       }
 
@@ -399,7 +403,7 @@ namespace lazy {
       using reference = typename Range::reference;
 
       decltype(auto) CurrentValue() const {
-        ASSERT(!IsAtEnd());
+        LAZY_ASSERT(!IsAtEnd());
         return range_.CurrentValue();
       }
 
@@ -414,7 +418,7 @@ namespace lazy {
       }
 
       void Advance() {
-        ASSERT(!IsAtEnd());
+        LAZY_ASSERT(!IsAtEnd());
         if (range_.IsAtBegin()) {
           is_at_rend_ = true;
         } else {
@@ -423,7 +427,7 @@ namespace lazy {
       }
 
       void Retreat() {
-        ASSERT(!IsAtBegin());
+        LAZY_ASSERT(!IsAtBegin());
         if (is_at_rend_) {
           is_at_rend_ = false;
         } else {
@@ -615,7 +619,6 @@ namespace lazy {
             std::move(v), std::move(range_))));
       }
 
-      // TODO: print what's wrong in ASSERT()
       // TODO: SkipRepeating()
       // TODO: SortUnique()
       // TODO: implicit cast to containers
