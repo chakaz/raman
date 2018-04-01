@@ -18,7 +18,6 @@
 #endif
 
 // Solve:
-// - Force telescoping (avoid re-use)
 // - Allow forward (i.e: non-backward) iterators
 namespace lazy {
   namespace internal {
@@ -521,6 +520,10 @@ namespace lazy {
       Range range_;
     };
 
+    // LazyWrapper wraps a Range with functions that allow manipulating it, such
+    // as Where(), Reverse(), etc.
+    // It is only allowed to be used in telescoping (like:
+    // From(x).Where().Sort()), and thus all methods only exist for rvalues.
     template <typename Range>
     struct LazyWrapper {
       explicit LazyWrapper(Range range)
@@ -532,20 +535,20 @@ namespace lazy {
       LazyWrapper& operator=(LazyWrapper&&) = default;
 
       template <typename Filter>
-      auto Where(Filter filter) {
+      auto Where(Filter filter) && {
         using InnerRange = FilteredRange<Range, Filter>;
         return LazyWrapper<InnerRange>(InnerRange(std::move(range_),
                                                   std::move(filter)));
       }
 
       template <typename Transformer>
-      auto Transform(Transformer transformer) {
+      auto Transform(Transformer transformer) && {
         using InnerRange = ByValueTransformerRange<Range, Transformer>;
         return LazyWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
-      auto Keys() {
+      auto Keys() && {
         auto transformer = [](const ValueType<Range>& entry) {
           return entry.first;
         };
@@ -554,7 +557,7 @@ namespace lazy {
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
-      auto Values() {
+      auto Values() && {
         auto transformer = [](ValueType<Range>& entry) -> auto& {
           return entry.second;
         };
@@ -563,19 +566,19 @@ namespace lazy {
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
-      auto Dereference() {
+      auto Dereference() && {
         using InnerRange = DereferenceRange<Range>;
         return LazyWrapper<InnerRange>(InnerRange(std::move(range_)));
       }
 
-      auto AddressOf() {
+      auto AddressOf() && {
         auto transformer = [](ValueType<Range>& entry) { return &entry; };
         using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
-      auto Reverse() {
+      auto Reverse() && {
         using InnerRange = ReverseRange<Range>;
         return LazyWrapper<InnerRange>(InnerRange(std::move(range_)));
       }
@@ -584,11 +587,11 @@ namespace lazy {
       // reference to each of the values of the original list. You may modify
       // values unless otherwise limited.
       // TODO: This does not yet occur lazily.
-      auto Sort() {
-        return Sort(std::less<ValueType<Range>>());
+      auto Sort() && {
+        return std::move(*this).Sort(std::less<ValueType<Range>>());
       }
       template <typename Comparator>
-      auto Sort(Comparator comparator) {
+      auto Sort(Comparator comparator) && {
         using Pointer = ValueType<Range>*;
         using TmpVector = std::vector<Pointer>;
         TmpVector v;
