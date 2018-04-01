@@ -135,18 +135,23 @@ namespace lazy {
         return current_ == end_;
       }
 
-      Iterator begin_;  // Non-const to support copy-assignment.
+      Iterator begin_;
       Iterator current_;
-      Iterator end_;  // Non-const to support copy-assignment.
+      Iterator end_;
     };
 
     template <typename Container>
     struct ContainerOwner {
       explicit ContainerOwner(Container&& container)
-          : container_(std::move(container)) {}
+          : container_(std::make_shared<Container>(std::move(container))) {}
+
+      ContainerOwner(const ContainerOwner&) = default;
+      ContainerOwner& operator=(const ContainerOwner&) = default;
+      ContainerOwner(ContainerOwner&&) = default;
+      ContainerOwner& operator=(ContainerOwner&&) = default;
 
      protected:
-      Container container_;
+      std::shared_ptr<Container> container_;
     };
 
     // Like SimpleRange, but also owns the container. Built for rvalues.
@@ -156,13 +161,13 @@ namespace lazy {
       explicit SimpleRangeOwner(Container&& container)
           : ContainerOwner<Container>(std::move(container)),
             SimpleRange<IteratorOf<Container>>(
-                ContainerOwner<Container>::container_.begin(),
-                ContainerOwner<Container>::container_.end()) {}
+                this->container_->begin(),
+                this->container_->end()) {}
 
-      SimpleRangeOwner(const SimpleRangeOwner&) = default;
-      SimpleRangeOwner& operator=(const SimpleRangeOwner&) = default;
-      SimpleRangeOwner(SimpleRangeOwner&&) = default;
-      SimpleRangeOwner& operator=(SimpleRangeOwner&&) = default;
+      SimpleRangeOwner(const SimpleRangeOwner& o) = default;
+      SimpleRangeOwner& operator=(const SimpleRangeOwner& o) = default;
+      SimpleRangeOwner(SimpleRangeOwner&& o) = default;
+      SimpleRangeOwner& operator=(SimpleRangeOwner&& o) = default;
     };
 
     // Filtered range.
@@ -339,8 +344,11 @@ namespace lazy {
     template <typename T>
     struct DereferenceFunctor {
       DereferenceFunctor() = default;
+
       DereferenceFunctor(const DereferenceFunctor&) = default;
+      DereferenceFunctor(DereferenceFunctor&&) = default;
       DereferenceFunctor& operator=(const DereferenceFunctor&) = default;
+      DereferenceFunctor& operator=(DereferenceFunctor&&) = default;
 
       decltype(auto) operator()(const T& t) const {
         return *t;
@@ -586,14 +594,30 @@ namespace lazy {
           return comparator(*a, *b);
         });
 
-        using OwnerRange = internal::SimpleRangeOwner<TmpVector>;
-        using DerefRange = internal::DereferenceRange<OwnerRange>;
-        return LazyWrapper<DerefRange>(DerefRange(OwnerRange(std::move(v))));
+        // Owns both sorted and unsorted ranges.
+        struct OwnerRange : internal::SimpleRangeOwner<TmpVector> {
+          OwnerRange(TmpVector&& sorted, Range range)
+              : internal::SimpleRangeOwner<TmpVector>(std::move(sorted)),
+                range_(std::move(range)) {}
+
+          OwnerRange(const OwnerRange&) = default;
+          OwnerRange& operator=(const OwnerRange&) = default;
+          OwnerRange(OwnerRange&&) = default;
+          OwnerRange& operator=(OwnerRange&&) = default;
+
+         protected:
+          Range range_;
+        };
+
+        using DerefRange = DereferenceRange<OwnerRange>;
+        return LazyWrapper<DerefRange>(DerefRange(OwnerRange(
+            std::move(v), range_)));
       }
 
       // TODO: print what's wrong in ASSERT()
       // TODO: SkipRepeating()
       // TODO: SortUnique()
+      // TODO: implicit cast to containers
 
       auto begin() {
         return RangeIterator<Range>(range_, /*is_end=*/false);
