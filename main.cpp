@@ -441,6 +441,14 @@ TEST_CASE("simple reverse") {
   SimpleReverse(vector<string>{});
   SimpleReverse(list<string>{});
   SimpleReverse(deque<string>{});
+
+  // single element
+  SimpleReverse(vector<int>{1});
+  SimpleReverse(list<int>{1});
+  SimpleReverse(deque<int>{1});
+  SimpleReverse(vector<string>{"one"});
+  SimpleReverse(list<string>{"one"});
+  SimpleReverse(deque<string>{"one"});
 }
 
 TEST_CASE("vector: filter & reverse") {
