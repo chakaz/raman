@@ -570,8 +570,37 @@ namespace lazy {
             std::move(v), std::move(range_))));
       }
 
-      // TODO: SkipRepeating()
-      // TODO: SortUnique()
+      // Skips CONSECUTIVE identical items, like command line uniq.
+      // Sort() first if you want global uniqueness.
+      auto Unique() && {
+        return std::move(*this).Unique(std::equal_to<ValueType<Range>>());
+      }
+      template <typename Comparator>
+      auto Unique(Comparator comparator) && {
+        using Value = ValueType<Range>;
+
+        struct Filter {
+          explicit Filter(Comparator comparator)
+            : comparator_(std::move(comparator)) {}
+
+          bool operator()(const Value& value) const {
+            if (previous_ == nullptr) {
+              previous_ = &value;
+              return true;
+            }
+            bool equals_previous = comparator_(*previous_, value);
+            previous_ = &value;
+            return !equals_previous;
+          }
+
+          mutable const Value* previous_ = nullptr;
+          Comparator comparator_;
+        };
+
+        using InnerRange = FilteredRange<Range, Filter>;
+        return LazyWrapper<InnerRange>(InnerRange(
+              std::move(range_), std::move(Filter(std::move(comparator)))));
+      }
 
       auto begin() { return range_.begin(); }
       auto end() { return range_.end(); }

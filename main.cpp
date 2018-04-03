@@ -715,3 +715,81 @@ TEST_CASE("const range") {
     REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
   }
 }
+
+TEST_CASE("Unique") {
+  {
+    vector<int> out = lazy::From(vector<int>{}).Unique();
+    REQUIRE(out == vector<int>{});
+  }
+
+  {
+    vector<int> out = lazy::From(vector<int>{1}).Unique();
+    REQUIRE(out == vector<int>{1});
+  }
+
+  {
+    vector<int> out = lazy::From(vector<int>{1, 2, 3, 4, 5, 6}).Unique();
+    REQUIRE(out == vector<int>{1, 2, 3, 4, 5, 6});
+  }
+
+  {
+    vector<int> out = lazy::From(vector<int>{1, 1, 1, 1, 1, 1, 1}).Unique();
+    REQUIRE(out == vector<int>{1});
+  }
+
+  {
+    vector<int> out = lazy::From(vector<int>{1, 2, 2, 2, 3, 2}).Unique();
+    REQUIRE(out == vector<int>{1, 2, 3, 2});
+  }
+
+  {
+    vector<int> out = lazy::From(vector<int>{1, 2, 2, 2, 3, 2}).Sort().Unique();
+    REQUIRE(out == vector<int>{1, 2, 3});
+  }
+
+  {
+    vector<int> out = lazy::From(vector<int>{1, 2, 2, 2, 3, 2})
+                            .Sort()
+                            .Reverse()
+                            .Unique();
+    REQUIRE(out == vector<int>{3, 2, 1});
+  }
+
+  {
+    vector<string> out = lazy::From(vector<string>{}).Unique();
+    REQUIRE(out == vector<string>{});
+  }
+
+  {
+    vector<string> out = lazy::From(vector<string>{"one"}).Unique();
+    REQUIRE(out == vector<string>{"one"});
+  }
+
+  {
+    vector<string> out = lazy::From(vector<string>{"1", "2", "3"}).Unique();
+    REQUIRE(out == vector<string>{"1", "2", "3"});
+  }
+
+  {
+    vector<string> out =
+        lazy::From(vector<string>{"1", "2", "2", "2", "3", "2"}).Unique();
+    REQUIRE(out == vector<string>{"1", "2", "3", "2"});
+  }
+
+  {
+    vector<string> out =
+        lazy::From(vector<string>{"1", "2", "2", "2", "3", "2"})
+        .Sort()
+        .Unique();
+    REQUIRE(out == vector<string>{"1", "2", "3"});
+  }
+
+  {
+    vector<string> out =
+        lazy::From(vector<string>{"1", "2", "2", "2", "3", "2"})
+              .Sort()
+              .Reverse()
+              .Unique();
+    REQUIRE(out == vector<string>{"3", "2", "1"});
+  }
+}
