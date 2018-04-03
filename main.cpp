@@ -56,7 +56,6 @@ void RangedBasedForCopy(Container in) {
 
   REQUIRE(in == out);
 }
-
 TEST_CASE("ranged based for (copy)") {
   // int
   RangedBasedForCopy(vector<int>{1, 2, 3, 4, 5, 6, 7});
@@ -107,7 +106,6 @@ void TestSubRange(const Container& in) {
   vector<Value> expected(begin, end);
   REQUIRE(out == expected);
 }
-
 TEST_CASE("sub-ranges") {
   TestSubRange(vector<int>{1, 2});
   TestSubRange(vector<int>{1, 2, 3});
@@ -133,7 +131,6 @@ void RangedBasedForConstRef(Container in) {
 
   REQUIRE(in == out);
 }
-
 TEST_CASE("ranged based for (const-ref)") {
   // int
   RangedBasedForConstRef(vector<int>{1, 2, 3, 4, 5, 6, 7});
@@ -165,7 +162,6 @@ void OldStyleFor(Container in) {
 
   REQUIRE(in == out);
 }
-
 TEST_CASE("old-style for") {
   // int
   OldStyleFor(vector<int>{1, 2, 3, 4, 5, 6, 7});
@@ -195,7 +191,6 @@ void RangedBasedForMutating(Container in, Container expected) {
 
   REQUIRE(c == expected);
 }
-
 TEST_CASE("ranged based for (mutate)") {
   // int
   RangedBasedForMutating(vector<int>{1, 2, 3, 4, 5},
@@ -462,7 +457,6 @@ void SimpleReverse(Container in) {
 
   REQUIRE(out == expected);
 }
-
 TEST_CASE("simple reverse") {
   // int
   SimpleReverse(vector<int>{1, 2, 3, 4, 5, 6, 7});
@@ -522,7 +516,6 @@ void EmptyRangeAllFeatures() {
 
   REQUIRE(out == Container());
 }
-
 TEST_CASE("empty range") {
   EmptyRangeAllFeatures<vector<int>>();
   EmptyRangeAllFeatures<list<int>>();
@@ -586,7 +579,6 @@ void TestSort(const Container& container) {
   REQUIRE(in == expectedModified);
   REQUIRE(out == expectedOut);
 }
-
 TEST_CASE("Sort") {
   TestSort<vector<int>>({1, 3, 2, 5, 4});
   TestSort<deque<int>>({1, 3, 2, 5, 4});
