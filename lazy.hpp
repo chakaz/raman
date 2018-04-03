@@ -41,6 +41,9 @@ namespace lazy {
       return std::is_copy_assignable<T>::value;
     }
 
+    template <typename...>
+    using void_t = void;
+
     // Horrible, horrible hack to allow copy/move assignment of functors, which
     // prior to C++20 can't be assigned.
     template <typename Functor, typename = void>
@@ -569,10 +572,22 @@ namespace lazy {
 
       // TODO: SkipRepeating()
       // TODO: SortUnique()
-      // TODO: implicit cast to containers
 
       auto begin() { return range_.begin(); }
       auto end() { return range_.end(); }
+
+      // Implicit cast to any container.
+      // TODO: use std::move() if we own the container(?)
+      template <typename Container>
+      operator Container() && {
+        Container container;
+        auto output_it = std::inserter(container, container.end());
+        for (const auto& it : *this) {
+          *output_it = it;
+          ++output_it;
+        }
+        return container;
+      }
 
      private:
       Range range_;

@@ -30,6 +30,20 @@ namespace {
   void AppendToContainer(Container& container, Value&& value) {
     container.insert(container.end(), std::forward<Value>(value));
   }
+
+  template <typename Container, typename Value = typename Container::value_type>
+  vector<Value> ToVector(const Container& in) {
+    vector<Value> out;
+    std::copy(in.begin(), in.end(), std::back_inserter(out));
+    return out;
+  }
+
+  template <typename Container, typename Value = typename Container::value_type>
+  vector<Value> ToSortedVector(const Container& in) {
+    vector<Value> out = ToVector(in);
+    std::sort(out.begin(), out.end());
+    return out;
+  }
 }
 
 template <typename Container>
@@ -554,8 +568,84 @@ TEST_CASE("Sort") {
   TestSort<deque<string>>({"1=one", "3=three", "2=two"});
 }
 
+template <typename ContainerTo, typename ContainerFrom>
+void TestCastToContainer(const ContainerFrom& in) {
+  ContainerTo out = lazy::From(in);
+  REQUIRE(ToVector(out) == ToVector(in));
+}
+template <typename ContainerTo, typename ContainerFrom>
+void TestCastToContainerUnordered(const ContainerFrom& in) {
+  ContainerTo out = lazy::From(in);
+  REQUIRE(ToSortedVector(out) == ToSortedVector(in));
+}
+TEST_CASE("Cast to container") {
+  vector<int> v = lazy::From(vector<int>{1, 3, 2, 4, 5}).Sort().Reverse();
+  REQUIRE(v == vector<int>{5, 4, 3, 2, 1});
+
+  // To vector
+  TestCastToContainer<vector<int>>(vector<int>{1, 2, 3, 4});
+  TestCastToContainer<vector<int>>(list<int>{1, 2, 3, 4});
+  TestCastToContainer<vector<int>>(deque<int>{1, 2, 3, 4});
+  TestCastToContainer<vector<int>>(set<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<vector<int>>(unordered_set<int>{1, 2, 3, 4});
+  TestCastToContainer<vector<string>>(vector<string>{"one", "two"});
+  TestCastToContainer<vector<string>>(list<string>{"one", "two"});
+  TestCastToContainer<vector<string>>(deque<string>{"one", "two"});
+  TestCastToContainer<vector<string>>(set<string>{"one", "two"});
+  TestCastToContainerUnordered<vector<string>>(unordered_set<string>{"one", "two"});
+
+  // To list
+  TestCastToContainer<list<int>>(vector<int>{1, 2, 3, 4});
+  TestCastToContainer<list<int>>(list<int>{1, 2, 3, 4});
+  TestCastToContainer<list<int>>(deque<int>{1, 2, 3, 4});
+  TestCastToContainer<list<int>>(set<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<list<int>>(unordered_set<int>{1, 2, 3, 4});
+  TestCastToContainer<list<string>>(vector<string>{"one", "two"});
+  TestCastToContainer<list<string>>(list<string>{"one", "two"});
+  TestCastToContainer<list<string>>(deque<string>{"one", "two"});
+  TestCastToContainer<list<string>>(set<string>{"one", "two"});
+  TestCastToContainerUnordered<list<string>>(unordered_set<string>{"one", "two"});
+
+  // To deque
+  TestCastToContainer<deque<int>>(vector<int>{1, 2, 3, 4});
+  TestCastToContainer<deque<int>>(list<int>{1, 2, 3, 4});
+  TestCastToContainer<deque<int>>(deque<int>{1, 2, 3, 4});
+  TestCastToContainer<deque<int>>(set<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<deque<int>>(unordered_set<int>{1, 2, 3, 4});
+  TestCastToContainer<deque<string>>(vector<string>{"one", "two"});
+  TestCastToContainer<deque<string>>(list<string>{"one", "two"});
+  TestCastToContainer<deque<string>>(deque<string>{"one", "two"});
+  TestCastToContainer<deque<string>>(set<string>{"one", "two"});
+  TestCastToContainerUnordered<deque<string>>(unordered_set<string>{"one", "two"});
+
+  // To set
+  TestCastToContainer<set<int>>(vector<int>{1, 2, 3, 4});
+  TestCastToContainer<set<int>>(list<int>{1, 2, 3, 4});
+  TestCastToContainer<set<int>>(deque<int>{1, 2, 3, 4});
+  TestCastToContainer<set<int>>(set<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<set<int>>(unordered_set<int>{1, 2, 3, 4});
+  TestCastToContainer<set<string>>(vector<string>{"one", "two"});
+  TestCastToContainer<set<string>>(list<string>{"one", "two"});
+  TestCastToContainer<set<string>>(deque<string>{"one", "two"});
+  TestCastToContainer<set<string>>(set<string>{"one", "two"});
+  TestCastToContainerUnordered<set<string>>(unordered_set<string>{"one", "two"});
+
+  // To unordered_set
+  TestCastToContainerUnordered<unordered_set<int>>(vector<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<unordered_set<int>>(list<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<unordered_set<int>>(deque<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<unordered_set<int>>(set<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<unordered_set<int>>(unordered_set<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<unordered_set<string>>(vector<string>{"1", "2"});
+  TestCastToContainerUnordered<unordered_set<string>>(list<string>{"1", "2"});
+  TestCastToContainerUnordered<unordered_set<string>>(deque<string>{"1", "2"});
+  TestCastToContainerUnordered<unordered_set<string>>(set<string>{"1", "2"});
+  TestCastToContainerUnordered<unordered_set<string>>(unordered_set<string>{"1", "2"});
+}
+
 // TODO: test:
 // - const ranges
 // - ranges with const elements
 // - const ranges with const elements
 // - From(initializer-list)
+// - sub ranges
