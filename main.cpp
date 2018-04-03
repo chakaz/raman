@@ -661,8 +661,57 @@ TEST_CASE("Cast to container") {
   TestCastToContainerUnordered<unordered_set<string>>(unordered_set<string>{"1", "2"});
 }
 
-// TODO: test:
-// - const ranges
-// - ranges with const elements
-// - const ranges with const elements
-// - From(initializer-list)
+TEST_CASE("const range") {
+  {
+    const vector<int> in = {1, 3, 2, 4, 5};
+    vector<int> out = lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
+  }
+
+  {
+    const vector<string> in = {"1-one", "3-three", "2-two"};
+    vector<string> out =
+        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
+  }
+
+  {
+    vector<const int> in = {1, 3, 2, 4, 5};
+    vector<int> out = lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
+  }
+
+  {
+    vector<const string> in = {"1-one", "3-three", "2-two"};
+    vector<string> out =
+        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
+  }
+
+  {
+    const vector<const int> in = {1, 3, 2, 4, 5};
+    vector<int> out = lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
+  }
+
+  {
+    const vector<const string> in = {"1-one", "3-three", "2-two"};
+    vector<string> out =
+        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
+  }
+
+  {
+    const vector<const int> in = {1, 3, 2, 4, 5};
+    const vector<int> out =
+        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
+  }
+
+  {
+    const vector<const string> in = {"1-one", "3-three", "2-two"};
+    const vector<string> out =
+        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
+  }
+}
