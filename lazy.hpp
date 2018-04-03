@@ -42,9 +42,6 @@ namespace lazy {
       return std::is_copy_assignable<T>::value;
     }
 
-    template <typename...>
-    using void_t = void;
-
     // Horrible, horrible hack to allow copy/move assignment of functors, which
     // prior to C++20 can't be assigned.
     template <typename Functor, typename = void>
@@ -160,16 +157,19 @@ namespace lazy {
         iterator& operator=(iterator&&) = default;
 
         decltype(auto) operator*() const {
+          LAZY_ASSERT(iterator_ != range_->range_.end());
           return *iterator_;
         }
 
         iterator& operator++() {
+          LAZY_ASSERT(iterator_ != range_->range_.end());
           ++iterator_;
           AdvanceToNextNonFilteredIfNeeded();
           return *this;
         }
 
         iterator& operator--() {
+          LAZY_ASSERT(iterator_ != range_->range_.begin());
           --iterator_;
           RetreatToPreviousNonFilteredIfNeeded();
           return *this;
@@ -207,8 +207,13 @@ namespace lazy {
         return (range_ == o.range_ && filter_.functor == o.filter_.functor);
       }
 
-      iterator begin() { return iterator(this, range_.begin()); }
-      iterator end() { return iterator(this, range_.end()); }
+      iterator begin() {
+        return iterator(this, range_.begin());
+      }
+
+      iterator end() {
+        return iterator(this, range_.end());
+      }
 
      private:
       Range range_;
@@ -256,7 +261,7 @@ namespace lazy {
       ByValueTransformerRange& operator=(ByValueTransformerRange&&) = default;
 
       struct iterator : SimpleRangeIterator<typename Range::iterator> {
-        iterator(const ByValueTransformerRange* const range,
+        iterator(ByValueTransformerRange* const range,
                  typename Range::iterator iterator)
           : SimpleRangeIterator<typename Range::iterator>(std::move(iterator)),
             range_(range) {}
@@ -267,6 +272,7 @@ namespace lazy {
         iterator& operator=(iterator&&) = default;
 
         auto operator*() const {
+          LAZY_ASSERT(this->iterator_ != range_->range_.end());
           return range_->transformer_.functor(*this->iterator_);
         }
 
@@ -279,7 +285,7 @@ namespace lazy {
         }
 
        private:
-        const ByValueTransformerRange* const range_;
+        ByValueTransformerRange* const range_;
       };
 
       bool operator==(const ByValueTransformerRange& o) const {
@@ -287,8 +293,13 @@ namespace lazy {
                 transformer_.functor == o.transformer_.functor);
       }
 
-      iterator begin() { return iterator(this, range_.begin()); }
-      iterator end() { return iterator(this, range_.end()); }
+      iterator begin() {
+        return iterator(this, range_.begin());
+      }
+
+      iterator end() {
+        return iterator(this, range_.end());
+      }
 
      private:
       Range range_;
@@ -307,7 +318,7 @@ namespace lazy {
       ByRefTransformerRange& operator=(ByRefTransformerRange&&) = default;
 
       struct iterator : SimpleRangeIterator<typename Range::iterator> {
-        iterator(const ByRefTransformerRange* const range,
+        iterator(ByRefTransformerRange* const range,
                  typename Range::iterator iterator)
           : SimpleRangeIterator<typename Range::iterator>(std::move(iterator)),
             range_(range) {}
@@ -318,6 +329,7 @@ namespace lazy {
         iterator& operator=(iterator&&) = default;
 
         decltype(auto) operator*() const {
+          LAZY_ASSERT(this->iterator_ != range_->range_.end());
           return range_->transformer_.functor(*this->iterator_);
         }
 
@@ -330,7 +342,7 @@ namespace lazy {
         }
 
        private:
-        const ByRefTransformerRange* const range_;
+        ByRefTransformerRange* const range_;
       };
 
       bool operator==(const ByRefTransformerRange& o) const {
@@ -338,8 +350,13 @@ namespace lazy {
                 transformer_.functor == o.transformer_.functor);
       }
 
-      iterator begin() { return iterator(this, range_.begin()); }
-      iterator end() { return iterator(this, range_.end()); }
+      iterator begin() {
+        return iterator(this, range_.begin());
+      }
+
+      iterator end() {
+        return iterator(this, range_.end());
+      }
 
      private:
       Range range_;
