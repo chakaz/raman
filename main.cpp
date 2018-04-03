@@ -97,6 +97,32 @@ TEST_CASE("empty ranges") {
   RangedBasedForCopy(unordered_map<string, string>());
 }
 
+template <typename Container, typename Value = typename Container::value_type>
+void TestSubRange(const Container& in) {
+  auto begin = in.begin();
+  ++begin;
+  auto end = in.end();
+  --end;
+  vector<Value> out = lazy::From(begin, end);
+  vector<Value> expected(begin, end);
+  REQUIRE(out == expected);
+}
+
+TEST_CASE("sub-ranges") {
+  TestSubRange(vector<int>{1, 2});
+  TestSubRange(vector<int>{1, 2, 3});
+  TestSubRange(vector<int>{1, 2, 3, 4});
+  TestSubRange(list<int>{1, 2});
+  TestSubRange(list<int>{1, 2, 3});
+  TestSubRange(list<int>{1, 2, 3, 4});
+  TestSubRange(deque<int>{1, 2});
+  TestSubRange(deque<int>{1, 2, 3});
+  TestSubRange(deque<int>{1, 2, 3, 4});
+  TestSubRange(set<int>{1, 2});
+  TestSubRange(set<int>{1, 2, 3});
+  TestSubRange(set<int>{1, 2, 3, 4});
+}
+
 template <typename Container>
 void RangedBasedForConstRef(Container in) {
   Container out;
@@ -648,4 +674,3 @@ TEST_CASE("Cast to container") {
 // - ranges with const elements
 // - const ranges with const elements
 // - From(initializer-list)
-// - sub ranges
