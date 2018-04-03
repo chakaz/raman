@@ -34,7 +34,8 @@ namespace lazy {
     using ReferenceType = decltype(*std::declval<typename Range::iterator>());
 
     template <typename Range>
-    using ValueType = typename std::remove_reference<ReferenceType<Range>>::type;
+    using ValueType =
+        typename std::remove_reference<ReferenceType<Range>>::type;
 
     template <typename T>
     constexpr bool IsAssignable() {
@@ -502,7 +503,8 @@ namespace lazy {
         auto transformer = [](const ValueType<Range>& entry) {
           return entry.first;
         };
-        using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
+        using InnerRange =
+            ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }
@@ -523,7 +525,8 @@ namespace lazy {
 
       auto AddressOf() && {
         auto transformer = [](ValueType<Range>& entry) { return &entry; };
-        using InnerRange = ByValueTransformerRange<Range, decltype(transformer)>;
+        using InnerRange =
+            ByValueTransformerRange<Range, decltype(transformer)>;
         return LazyWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }

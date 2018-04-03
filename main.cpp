@@ -139,7 +139,8 @@ TEST_CASE("ranged based for (const-ref)") {
   RangedBasedForConstRef(set<int>{1, 2, 3, 4, 5, 6, 7});
   RangedBasedForConstRef(unordered_set<int>{1, 2, 3, 4, 5, 6, 7});
   RangedBasedForConstRef(map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
-  RangedBasedForConstRef(unordered_map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
+  RangedBasedForConstRef(
+      unordered_map<int, int>{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
 
   // string
   RangedBasedForConstRef(vector<string>{"one", "two", "three"});
@@ -148,7 +149,8 @@ TEST_CASE("ranged based for (const-ref)") {
   RangedBasedForConstRef(set<string>{"one", "two", "three"});
   RangedBasedForConstRef(unordered_set<string>{"one", "two", "three"});
   RangedBasedForConstRef(map<string, string>{{"one", "1"}, {"two", "2"}});
-  RangedBasedForConstRef(unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
+  RangedBasedForConstRef(
+      unordered_map<string, string>{{"one", "1"}, {"two", "2"}});
 }
 
 template <typename Container>
@@ -610,7 +612,8 @@ TEST_CASE("Cast to container") {
   TestCastToContainer<vector<string>>(list<string>{"one", "two"});
   TestCastToContainer<vector<string>>(deque<string>{"one", "two"});
   TestCastToContainer<vector<string>>(set<string>{"one", "two"});
-  TestCastToContainerUnordered<vector<string>>(unordered_set<string>{"one", "two"});
+  TestCastToContainerUnordered<vector<string>>(
+      unordered_set<string>{"one", "two"});
 
   // To list
   TestCastToContainer<list<int>>(vector<int>{1, 2, 3, 4});
@@ -622,7 +625,8 @@ TEST_CASE("Cast to container") {
   TestCastToContainer<list<string>>(list<string>{"one", "two"});
   TestCastToContainer<list<string>>(deque<string>{"one", "two"});
   TestCastToContainer<list<string>>(set<string>{"one", "two"});
-  TestCastToContainerUnordered<list<string>>(unordered_set<string>{"one", "two"});
+  TestCastToContainerUnordered<list<string>>(
+      unordered_set<string>{"one", "two"});
 
   // To deque
   TestCastToContainer<deque<int>>(vector<int>{1, 2, 3, 4});
@@ -634,7 +638,8 @@ TEST_CASE("Cast to container") {
   TestCastToContainer<deque<string>>(list<string>{"one", "two"});
   TestCastToContainer<deque<string>>(deque<string>{"one", "two"});
   TestCastToContainer<deque<string>>(set<string>{"one", "two"});
-  TestCastToContainerUnordered<deque<string>>(unordered_set<string>{"one", "two"});
+  TestCastToContainerUnordered<deque<string>>(
+      unordered_set<string>{"one", "two"});
 
   // To set
   TestCastToContainer<set<int>>(vector<int>{1, 2, 3, 4});
@@ -646,19 +651,22 @@ TEST_CASE("Cast to container") {
   TestCastToContainer<set<string>>(list<string>{"one", "two"});
   TestCastToContainer<set<string>>(deque<string>{"one", "two"});
   TestCastToContainer<set<string>>(set<string>{"one", "two"});
-  TestCastToContainerUnordered<set<string>>(unordered_set<string>{"one", "two"});
+  TestCastToContainerUnordered<set<string>>(
+      unordered_set<string>{"one", "two"});
 
   // To unordered_set
   TestCastToContainerUnordered<unordered_set<int>>(vector<int>{1, 2, 3, 4});
   TestCastToContainerUnordered<unordered_set<int>>(list<int>{1, 2, 3, 4});
   TestCastToContainerUnordered<unordered_set<int>>(deque<int>{1, 2, 3, 4});
   TestCastToContainerUnordered<unordered_set<int>>(set<int>{1, 2, 3, 4});
-  TestCastToContainerUnordered<unordered_set<int>>(unordered_set<int>{1, 2, 3, 4});
+  TestCastToContainerUnordered<unordered_set<int>>(
+      unordered_set<int>{1, 2, 3, 4});
   TestCastToContainerUnordered<unordered_set<string>>(vector<string>{"1", "2"});
   TestCastToContainerUnordered<unordered_set<string>>(list<string>{"1", "2"});
   TestCastToContainerUnordered<unordered_set<string>>(deque<string>{"1", "2"});
   TestCastToContainerUnordered<unordered_set<string>>(set<string>{"1", "2"});
-  TestCastToContainerUnordered<unordered_set<string>>(unordered_set<string>{"1", "2"});
+  TestCastToContainerUnordered<unordered_set<string>>(
+      unordered_set<string>{"1", "2"});
 }
 
 TEST_CASE("const range") {
