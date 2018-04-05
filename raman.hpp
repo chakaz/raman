@@ -1,3 +1,39 @@
+/*
+ * Raman (Range Manipulation) C++ Range Manipulation Library:
+ * Dependency free, header-only, low overhead.
+ *
+ * Every usage of Raman begins by wrapping your range (be it a container or a
+ * pair of iterators) with raman::From(). You may use any STL or STL-like
+ * container / iterator. You may also pass an rvalue to raman::From(), in which
+ * case it will take ownership of the container.
+ *
+ * Once wrapped, you may use any of the utility functions below to manipulate
+ * your ranges, like Where(), AddressOf(), Sort(), Reverse(), etc.
+ *
+ * You may use Raman in range-based for loop, or use the implicit cast operator
+ * to cast the range to any container.
+ *
+ * Examples:
+ *
+ * (0) Tests:
+ * There are many, many examples in tests.cpp. They are mostly easy to read.
+ *
+ * (1) Filtering:
+ * Iterate over entries larger than 2:
+ * vector<int> input = ...;
+ * for (int i : raman::From(input).Where([](int j) { return j > 2; })) { ... }
+ *
+ * (2) Sort, Unique, Reverse
+ * Iterate over unique items in reverse-sorted order:
+ * for (string s : raman::From(GetStrings()).Sort().Unique().Reverse()) { ... }
+ *
+ * (3) Conversion
+ * Convert any container to any container:
+ * vector<int> list_to_vector = raman::From(l);  // l is of type list<int>
+ *
+ * To enable internal asserts #define RAMAN_ENABLE_RUNTIME_ASSERT
+ */
+
 #ifndef RAMAN_CONTAINERS_LIBRARY
 #define RAMAN_CONTAINERS_LIBRARY
 
@@ -7,9 +43,7 @@
 #include <memory>
 #include <type_traits>
 
-#ifdef RAMAN_DISABLE_RUNTIME_ASSERT
-#  define RAMAN_ASSERT(x)
-#else
+#ifdef RAMAN_ENABLE_RUNTIME_ASSERT
 #  define RAMAN_STRINGIZE_DETAIL(x) #x
 #  define RAMAN_STRINGIZE(x) RAMAN_STRINGIZE_DETAIL(x)
 #  define RAMAN_ASSERT(x)                                        \
@@ -18,6 +52,8 @@
     throw std::runtime_error(                                   \
         "[" __FILE__ ":" RAMAN_STRINGIZE(__LINE__) "] " #x);     \
   }
+#else
+#  define RAMAN_ASSERT(x)
 #endif
 
 // TODO:

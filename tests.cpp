@@ -12,6 +12,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
+#define RAMAN_ENABLE_RUNTIME_ASSERT
 #include "raman.hpp"
 
 using std::array;
