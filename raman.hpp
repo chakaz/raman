@@ -1,5 +1,5 @@
-#ifndef LAZY_CONTAINERS_LIBRARY
-#define LAZY_CONTAINERS_LIBRARY
+#ifndef RAMAN_CONTAINERS_LIBRARY
+#define RAMAN_CONTAINERS_LIBRARY
 
 #include <algorithm>
 #include <exception>
@@ -7,23 +7,23 @@
 #include <memory>
 #include <type_traits>
 
-#ifdef LAZY_DISABLE_RUNTIME_ASSERT
-#  define LAZY_ASSERT(x)
+#ifdef RAMAN_DISABLE_RUNTIME_ASSERT
+#  define RAMAN_ASSERT(x)
 #else
-#  define LAZY_STRINGIZE_DETAIL(x) #x
-#  define LAZY_STRINGIZE(x) LAZY_STRINGIZE_DETAIL(x)
-#  define LAZY_ASSERT(x)                                        \
+#  define RAMAN_STRINGIZE_DETAIL(x) #x
+#  define RAMAN_STRINGIZE(x) RAMAN_STRINGIZE_DETAIL(x)
+#  define RAMAN_ASSERT(x)                                        \
   if (!(x)) {                                                   \
-    ::lazy::internal::DieDebugHook();                           \
+    ::raman::internal::DieDebugHook();                           \
     throw std::runtime_error(                                   \
-        "[" __FILE__ ":" LAZY_STRINGIZE(__LINE__) "] " #x);     \
+        "[" __FILE__ ":" RAMAN_STRINGIZE(__LINE__) "] " #x);     \
   }
 #endif
 
 // TODO:
 // - Allow forward (i.e: non-backward) iterators
-// - Add many more LAZY_ASSERTs
-namespace lazy {
+// - Add many more RAMAN_ASSERTs
+namespace raman {
   namespace internal {
     void DieDebugHook() {}
 
@@ -157,19 +157,19 @@ namespace lazy {
         iterator& operator=(iterator&&) = default;
 
         decltype(auto) operator*() const {
-          LAZY_ASSERT(iterator_ != range_->range_.end());
+          RAMAN_ASSERT(iterator_ != range_->range_.end());
           return *iterator_;
         }
 
         iterator& operator++() {
-          LAZY_ASSERT(iterator_ != range_->range_.end());
+          RAMAN_ASSERT(iterator_ != range_->range_.end());
           ++iterator_;
           AdvanceToNextNonFilteredIfNeeded();
           return *this;
         }
 
         iterator& operator--() {
-          LAZY_ASSERT(iterator_ != range_->range_.begin());
+          RAMAN_ASSERT(iterator_ != range_->range_.begin());
           --iterator_;
           RetreatToPreviousNonFilteredIfNeeded();
           return *this;
@@ -272,7 +272,7 @@ namespace lazy {
         iterator& operator=(iterator&&) = default;
 
         auto operator*() const {
-          LAZY_ASSERT(this->iterator_ != range_->range_.end());
+          RAMAN_ASSERT(this->iterator_ != range_->range_.end());
           return range_->transformer_.functor(*this->iterator_);
         }
 
@@ -329,7 +329,7 @@ namespace lazy {
         iterator& operator=(iterator&&) = default;
 
         decltype(auto) operator*() const {
-          LAZY_ASSERT(this->iterator_ != range_->range_.end());
+          RAMAN_ASSERT(this->iterator_ != range_->range_.end());
           return range_->transformer_.functor(*this->iterator_);
         }
 
@@ -424,14 +424,14 @@ namespace lazy {
         iterator& operator=(iterator&&) = default;
 
         decltype(auto) operator*() const {
-          LAZY_ASSERT(iterator_ != range_->range_.end());
-          LAZY_ASSERT(!is_at_rend_);
+          RAMAN_ASSERT(iterator_ != range_->range_.end());
+          RAMAN_ASSERT(!is_at_rend_);
           return *iterator_;
         }
 
         iterator& operator++() {
-          LAZY_ASSERT(iterator_ != range_->range_.end());
-          LAZY_ASSERT(!is_at_rend_);
+          RAMAN_ASSERT(iterator_ != range_->range_.end());
+          RAMAN_ASSERT(!is_at_rend_);
           if (iterator_ == range_->range_.begin()) {
             is_at_rend_ = true;
           } else {
@@ -441,13 +441,13 @@ namespace lazy {
         }
 
         iterator& operator--() {
-          LAZY_ASSERT(iterator_ != range_->range_.end());
+          RAMAN_ASSERT(iterator_ != range_->range_.end());
           if (is_at_rend_) {
-            LAZY_ASSERT(iterator_ == range_->range_.begin());
+            RAMAN_ASSERT(iterator_ == range_->range_.begin());
             is_at_rend_ = false;
           } else {
             ++iterator_;
-            LAZY_ASSERT(iterator_ != range_->range_.begin());
+            RAMAN_ASSERT(iterator_ != range_->range_.begin());
           }
           return *this;
         }
@@ -490,29 +490,29 @@ namespace lazy {
       Range range_;
     };
 
-    // LazyWrapper wraps a Range with functions that allow manipulating it, such
+    // RamanWrapper wraps a Range with functions that allow manipulating it, such
     // as Where(), Reverse(), etc.
     // It is only allowed to be used in telescoping (like:
     // From(x).Where().Sort()), and thus all methods only exist for rvalues.
     template <typename Range>
-    struct LazyWrapper {
-      explicit LazyWrapper(Range range)
+    struct RamanWrapper {
+      explicit RamanWrapper(Range range)
         : range_(std::move(range)) {}
 
-      LazyWrapper(LazyWrapper&&) = default;
-      LazyWrapper& operator=(LazyWrapper&&) = default;
+      RamanWrapper(RamanWrapper&&) = default;
+      RamanWrapper& operator=(RamanWrapper&&) = default;
 
       template <typename Filter>
       auto Where(Filter filter) && {
         using InnerRange = FilteredRange<Range, Filter>;
-        return LazyWrapper<InnerRange>(InnerRange(std::move(range_),
-                                                  std::move(filter)));
+        return RamanWrapper<InnerRange>(InnerRange(
+              std::move(range_), std::move(filter)));
       }
 
       template <typename Transformer>
       auto Transform(Transformer transformer) && {
         using InnerRange = ByValueTransformerRange<Range, Transformer>;
-        return LazyWrapper<InnerRange>(
+        return RamanWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
@@ -522,7 +522,7 @@ namespace lazy {
         };
         using InnerRange =
             ByValueTransformerRange<Range, decltype(transformer)>;
-        return LazyWrapper<InnerRange>(
+        return RamanWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
@@ -531,26 +531,26 @@ namespace lazy {
           return entry.second;
         };
         using InnerRange = ByRefTransformerRange<Range, decltype(transformer)>;
-        return LazyWrapper<InnerRange>(
+        return RamanWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
       auto Dereference() && {
         using InnerRange = DereferenceRange<Range>;
-        return LazyWrapper<InnerRange>(InnerRange(std::move(range_)));
+        return RamanWrapper<InnerRange>(InnerRange(std::move(range_)));
       }
 
       auto AddressOf() && {
         auto transformer = [](ValueType<Range>& entry) { return &entry; };
         using InnerRange =
             ByValueTransformerRange<Range, decltype(transformer)>;
-        return LazyWrapper<InnerRange>(
+        return RamanWrapper<InnerRange>(
             InnerRange(std::move(range_), std::move(transformer)));
       }
 
       auto Reverse() && {
         using InnerRange = ReverseRange<Range>;
-        return LazyWrapper<InnerRange>(InnerRange(std::move(range_)));
+        return RamanWrapper<InnerRange>(InnerRange(std::move(range_)));
       }
 
       // Iterates over the range in a sorted fashion, while returning a
@@ -586,7 +586,7 @@ namespace lazy {
         };
 
         using DerefRange = DereferenceRange<OwnerRange>;
-        return LazyWrapper<DerefRange>(DerefRange(OwnerRange(
+        return RamanWrapper<DerefRange>(DerefRange(OwnerRange(
             std::move(v), std::move(range_))));
       }
 
@@ -618,7 +618,7 @@ namespace lazy {
         };
 
         using InnerRange = FilteredRange<Range, Filter>;
-        return LazyWrapper<InnerRange>(InnerRange(
+        return RamanWrapper<InnerRange>(InnerRange(
               std::move(range_), std::move(Filter(std::move(comparator)))));
       }
 
@@ -646,7 +646,7 @@ namespace lazy {
   template <typename Iterator>
   auto From(Iterator begin, Iterator end) {
     using Range = internal::SimpleRange<Iterator>;
-    return internal::LazyWrapper<Range>(
+    return internal::RamanWrapper<Range>(
         Range(std::move(begin), std::move(end)));
   }
 
@@ -660,8 +660,8 @@ namespace lazy {
   template <typename Container>
   auto From(Container&& container) {
     using Range = internal::SimpleRangeOwner<Container>;
-    return internal::LazyWrapper<Range>(Range(std::move(container)));
+    return internal::RamanWrapper<Range>(Range(std::move(container)));
   }
 }
 
-#endif  //LAZY_CONTAINERS_LIBRARY
+#endif  //RAMAN_CONTAINERS_LIBRARY

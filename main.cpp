@@ -12,7 +12,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "lazy.hpp"
+#include "raman.hpp"
 
 using std::array;
 using std::deque;
@@ -50,7 +50,7 @@ template <typename Container>
 void RangedBasedForCopy(Container in) {
   Container out;
 
-  for (typename Container::value_type i : lazy::From(in)) {
+  for (typename Container::value_type i : raman::From(in)) {
     AppendToContainer(out, i);
   }
 
@@ -102,7 +102,7 @@ void TestSubRange(const Container& in) {
   ++begin;
   auto end = in.end();
   --end;
-  vector<Value> out = lazy::From(begin, end);
+  vector<Value> out = raman::From(begin, end);
   vector<Value> expected(begin, end);
   REQUIRE(out == expected);
 }
@@ -125,7 +125,7 @@ template <typename Container>
 void RangedBasedForConstRef(Container in) {
   Container out;
 
-  for (typename Container::const_reference i : lazy::From(in)) {
+  for (typename Container::const_reference i : raman::From(in)) {
     AppendToContainer(out, i);
   }
 
@@ -157,7 +157,7 @@ template <typename Container>
 void OldStyleFor(Container in) {
   Container out;
 
-  auto range = lazy::From(in);
+  auto range = raman::From(in);
   for (auto it = range.begin(), end = range.end(); it != end; ++it) {
     AppendToContainer(out, *it);
   }
@@ -187,7 +187,7 @@ TEST_CASE("old-style for") {
 template <typename Container>
 void RangedBasedForMutating(Container in, Container expected) {
   Container c = in;
-  for (typename Container::reference i : lazy::From(c)) {
+  for (typename Container::reference i : raman::From(c)) {
     i = i + i;
   }
 
@@ -215,7 +215,7 @@ TEST_CASE("vector: filter head") {
   vector<int> in = {1, 2, 3, 4, 5, 6, 7};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Where([](int i) { return i > 3; })) {
+  for (auto i : raman::From(in).Where([](int i) { return i > 3; })) {
     out.push_back(i);
   }
 
@@ -226,7 +226,7 @@ TEST_CASE("vector: filter tail") {
   vector<int> in = {1, 2, 3, 4, 5, 6, 7};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Where([](int i) { return i < 5; })) {
+  for (auto i : raman::From(in).Where([](int i) { return i < 5; })) {
     out.push_back(i);
   }
 
@@ -237,7 +237,7 @@ TEST_CASE("vector: filter head & tail") {
   vector<int> in = {1, 2, 3, 4, 5, 6, 7};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Where([](int i) { return i > 2 && i < 5; })) {
+  for (auto i : raman::From(in).Where([](int i) { return i > 2 && i < 5; })) {
     out.push_back(i);
   }
 
@@ -249,7 +249,7 @@ TEST_CASE("vector: filter head & tail (2 filters)") {
   vector<int> out;
 
   for (auto i :
-      lazy::From(in)
+      raman::From(in)
         .Where([](int i) { return i > 2; })
         .Where([](int i) { return i < 5; })) {
     out.push_back(i);
@@ -262,7 +262,7 @@ TEST_CASE("vector: filter none") {
   vector<int> in = {1, 2, 3, 4, 5, 6, 7};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Where([](int i) { return true; })) {
+  for (auto i : raman::From(in).Where([](int i) { return true; })) {
     out.push_back(i);
   }
 
@@ -273,7 +273,7 @@ TEST_CASE("vector: filter all") {
   vector<int> in = {1, 2, 3, 4, 5, 6, 7};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Where([](int i) { return false; })) {
+  for (auto i : raman::From(in).Where([](int i) { return false; })) {
     out.push_back(i);
   }
 
@@ -283,7 +283,7 @@ TEST_CASE("vector: filter all") {
 TEST_CASE("vector: mutating with filter") {
   vector<int> v = {1, 2, 3, 4, 5, 6, 7};
 
-  for (auto& i : lazy::From(v).Where([](int i) { return i > 4; })) {
+  for (auto& i : raman::From(v).Where([](int i) { return i > 4; })) {
     ++i;
   }
 
@@ -294,7 +294,7 @@ TEST_CASE("vector: const container") {
   const vector<int> in = {1, 2, 3, 4, 5, 6, 7};
   vector<int> out;
 
-  for (auto i : lazy::From(in)) {
+  for (auto i : raman::From(in)) {
     out.push_back(i);
   }
 
@@ -305,7 +305,7 @@ TEST_CASE("vector: transformation") {
   const vector<int> in = {1, 2, 3, 4, 5, 6, 7};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Transform([](int i) { return i+1; })) {
+  for (auto i : raman::From(in).Transform([](int i) { return i+1; })) {
     out.push_back(i);
   }
 
@@ -318,7 +318,7 @@ TEST_CASE("vector: filter & transformation") {
   vector<int> out;
 
   for (auto i :
-      lazy::From(in)
+      raman::From(in)
         .Where([](int i) { return i > 3; })
         .Transform([](int i) { return i+1; })) {
     out.push_back(i);
@@ -332,7 +332,7 @@ TEST_CASE("map: keys") {
   const map<int, int> in = {{1, 2}, {3, 4}, {5, 6}};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Keys()) {
+  for (auto i : raman::From(in).Keys()) {
     out.push_back(i);
   }
 
@@ -343,7 +343,7 @@ TEST_CASE("map: values (const)") {
   const map<int, int> in = {{1, 2}, {3, 4}, {5, 6}};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Values()) {
+  for (auto i : raman::From(in).Values()) {
     out.push_back(i);
   }
 
@@ -353,7 +353,7 @@ TEST_CASE("map: values (const)") {
 TEST_CASE("map: values (mutate)") {
   map<int, int> m = {{1, 2}, {3, 4}, {5, 6}};
 
-  for (auto& i : lazy::From(m).Values()) {
+  for (auto& i : raman::From(m).Values()) {
     ++i;
   }
 
@@ -365,7 +365,7 @@ TEST_CASE("vector: deref (const)") {
   vector<int*> in = {&data[0], &data[1], &data[2], &data[3], &data[4]};
   vector<int> out;
 
-  for (auto i : lazy::From(in).Dereference()) {
+  for (auto i : raman::From(in).Dereference()) {
     out.push_back(i);
   }
 
@@ -376,7 +376,7 @@ TEST_CASE("vector: deref (mutate)") {
   array<int, 5> data = {0, 1, 2, 3, 4};
   vector<int*> v = {&data[0], &data[1], &data[2], &data[3], &data[4]};
 
-  for (auto& i : lazy::From(v).Dereference()) {
+  for (auto& i : raman::From(v).Dereference()) {
     ++i;
   }
 
@@ -391,7 +391,7 @@ TEST_CASE("vector: deref (unique_ptr)") {
   v.push_back(std::make_unique<string>("3"));
   v.push_back(std::make_unique<string>("4"));
 
-  for (auto& s : lazy::From(v).Dereference()) {
+  for (auto& s : raman::From(v).Dereference()) {
     s += "!";
   }
 
@@ -406,7 +406,7 @@ TEST_CASE("vector: AddressOf (const)") {
   vector<int> in = {1, 2, 3, 4, 5};
   vector<int*> out;
 
-  for (auto p : lazy::From(in).AddressOf()) {
+  for (auto p : raman::From(in).AddressOf()) {
     out.push_back(p);
   }
 
@@ -420,7 +420,7 @@ TEST_CASE("vector: AddressOf (const)") {
 TEST_CASE("vector: AddressOf (mutate)") {
   vector<int> v = {1, 2, 3, 4, 5};
 
-  for (auto p : lazy::From(v).AddressOf()) {
+  for (auto p : raman::From(v).AddressOf()) {
     *p = *p - 1;
   }
 
@@ -430,7 +430,7 @@ TEST_CASE("vector: AddressOf (mutate)") {
 TEST_CASE("vector: AddressOf, Dereference") {
   vector<int> v = {1, 2, 3, 4, 5};
 
-  for (auto& p : lazy::From(v).AddressOf().Dereference()) {
+  for (auto& p : raman::From(v).AddressOf().Dereference()) {
     --p;
   }
 
@@ -441,7 +441,7 @@ TEST_CASE("vector: rvalue") {
   auto factory = []() { return vector<int>{1, 2, 3, 4, 5}; };
   vector<int> out;
 
-  for (auto i : lazy::From(factory())) {
+  for (auto i : raman::From(factory())) {
     out.push_back(i);
   }
 
@@ -453,7 +453,7 @@ void SimpleReverse(Container in) {
   Container out;
   Container expected(in.rbegin(), in.rend());
 
-  for (auto i : lazy::From(in).Reverse()) {
+  for (auto i : raman::From(in).Reverse()) {
     AppendToContainer(out, i);
   }
 
@@ -491,9 +491,9 @@ TEST_CASE("vector: filter & reverse") {
   vector<int> in = {1, 2, 3, 4, 5, 6};
   vector<int> out;
 
-  for (int i : lazy::From(in)
-                     .Where([](int i) { return i > 2; })
-                     .Reverse()) {
+  for (int i : raman::From(in)
+                 .Where([](int i) { return i > 2; })
+                 .Reverse()) {
     out.push_back(i);
   }
 
@@ -504,15 +504,15 @@ template <typename Container>
 void EmptyRangeAllFeatures() {
   Container in, out;
 
-  for (auto i : lazy::From(in)
-                      .Reverse()
-                      .Where([](int i) { return i > 2; })
-                      .Reverse()
-                      .Where([](int i) { return i < 20; })
-                      .AddressOf()
-                      .Dereference()
-                      .Sort()
-                      .Reverse()) {
+  for (auto i : raman::From(in)
+                  .Reverse()
+                  .Where([](int i) { return i > 2; })
+                  .Reverse()
+                  .Where([](int i) { return i < 20; })
+                  .AddressOf()
+                  .Dereference()
+                  .Sort()
+                  .Reverse()) {
     AppendToContainer(out, i);
   }
 
@@ -529,15 +529,15 @@ TEST_CASE("vector: all features") {
   vector<int> in = {1, 3, 2, 5, 6, 4, 7, 8, 9, 10};
   vector<int> out;
 
-  for (int i : lazy::From(in)
-                     .Where([](int i) { return i > 2; })
-                     .Sort()
-                     .Reverse()
-                     .AddressOf()
-                     .Dereference()
-                     .Transform([](int i) { return i * 2; })
-                     .Where([](int i) { return i < 18; })
-                     .Reverse()) {
+  for (int i : raman::From(in)
+                 .Where([](int i) { return i > 2; })
+                 .Sort()
+                 .Reverse()
+                 .AddressOf()
+                 .Dereference()
+                 .Transform([](int i) { return i * 2; })
+                 .Where([](int i) { return i < 18; })
+                 .Reverse()) {
     out.push_back(i);
   }
 
@@ -552,8 +552,8 @@ TEST_CASE("vector: non-lambda filter") {
   vector<int> in = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   vector<int> out;
 
-  for (int i : lazy::From(in)
-                     .Where(FilterSmallerThan2())) {
+  for (int i : raman::From(in)
+                 .Where(FilterSmallerThan2())) {
     out.push_back(i);
   }
 
@@ -572,8 +572,8 @@ void TestSort(const Container& container) {
     value += value;
   }
 
-  for (auto& value : lazy::From(in)
-                           .Sort()) {
+  for (auto& value : raman::From(in)
+                       .Sort()) {
     AppendToContainer(out, value);
     value += value;
   }
@@ -590,16 +590,16 @@ TEST_CASE("Sort") {
 
 template <typename ContainerTo, typename ContainerFrom>
 void TestCastToContainer(const ContainerFrom& in) {
-  ContainerTo out = lazy::From(in);
+  ContainerTo out = raman::From(in);
   REQUIRE(ToVector(out) == ToVector(in));
 }
 template <typename ContainerTo, typename ContainerFrom>
 void TestCastToContainerUnordered(const ContainerFrom& in) {
-  ContainerTo out = lazy::From(in);
+  ContainerTo out = raman::From(in);
   REQUIRE(ToSortedVector(out) == ToSortedVector(in));
 }
 TEST_CASE("Cast to container") {
-  vector<int> v = lazy::From(vector<int>{1, 3, 2, 4, 5}).Sort().Reverse();
+  vector<int> v = raman::From(vector<int>{1, 3, 2, 4, 5}).Sort().Reverse();
   REQUIRE(v == vector<int>{5, 4, 3, 2, 1});
 
   // To vector
@@ -672,121 +672,124 @@ TEST_CASE("Cast to container") {
 TEST_CASE("const range") {
   {
     const vector<int> in = {1, 3, 2, 4, 5};
-    vector<int> out = lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    vector<int> out = raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
   }
 
   {
     const vector<string> in = {"1-one", "3-three", "2-two"};
     vector<string> out =
-        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+        raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
   }
 
   {
     vector<const int> in = {1, 3, 2, 4, 5};
-    vector<int> out = lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    vector<int> out =
+        raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
   }
 
   {
     vector<const string> in = {"1-one", "3-three", "2-two"};
     vector<string> out =
-        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+        raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
   }
 
   {
     const vector<const int> in = {1, 3, 2, 4, 5};
-    vector<int> out = lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+    vector<int> out =
+        raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
   }
 
   {
     const vector<const string> in = {"1-one", "3-three", "2-two"};
     vector<string> out =
-        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+        raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
   }
 
   {
     const vector<const int> in = {1, 3, 2, 4, 5};
     const vector<int> out =
-        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+        raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<int>{5, 4, 3, 2, 1});
   }
 
   {
     const vector<const string> in = {"1-one", "3-three", "2-two"};
     const vector<string> out =
-        lazy::From(in).Sort().Reverse().AddressOf().Dereference();
+        raman::From(in).Sort().Reverse().AddressOf().Dereference();
     REQUIRE(out == vector<string>{"3-three", "2-two", "1-one"});
   }
 }
 
 TEST_CASE("Unique") {
   {
-    vector<int> out = lazy::From(vector<int>{}).Unique();
+    vector<int> out = raman::From(vector<int>{}).Unique();
     REQUIRE(out == vector<int>{});
   }
 
   {
-    vector<int> out = lazy::From(vector<int>{1}).Unique();
+    vector<int> out = raman::From(vector<int>{1}).Unique();
     REQUIRE(out == vector<int>{1});
   }
 
   {
-    vector<int> out = lazy::From(vector<int>{1, 2, 3, 4, 5, 6}).Unique();
+    vector<int> out = raman::From(vector<int>{1, 2, 3, 4, 5, 6}).Unique();
     REQUIRE(out == vector<int>{1, 2, 3, 4, 5, 6});
   }
 
   {
-    vector<int> out = lazy::From(vector<int>{1, 1, 1, 1, 1, 1, 1}).Unique();
+    vector<int> out = raman::From(vector<int>{1, 1, 1, 1, 1, 1, 1}).Unique();
     REQUIRE(out == vector<int>{1});
   }
 
   {
-    vector<int> out = lazy::From(vector<int>{1, 2, 2, 2, 3, 2}).Unique();
+    vector<int> out = raman::From(vector<int>{1, 2, 2, 2, 3, 2}).Unique();
     REQUIRE(out == vector<int>{1, 2, 3, 2});
   }
 
   {
-    vector<int> out = lazy::From(vector<int>{1, 2, 2, 2, 3, 2}).Sort().Unique();
+    vector<int> out =
+        raman::From(vector<int>{1, 2, 2, 2, 3, 2}).Sort().Unique();
     REQUIRE(out == vector<int>{1, 2, 3});
   }
 
   {
-    vector<int> out = lazy::From(vector<int>{1, 2, 2, 2, 3, 2})
-                            .Sort()
-                            .Reverse()
-                            .Unique();
+    vector<int> out = raman::From(vector<int>{1, 2, 2, 2, 3, 2})
+                        .Sort()
+                        .Reverse()
+                        .Unique();
     REQUIRE(out == vector<int>{3, 2, 1});
   }
 
   {
-    vector<string> out = lazy::From(vector<string>{}).Unique();
+    vector<string> out = raman::From(vector<string>{}).Unique();
     REQUIRE(out == vector<string>{});
   }
 
   {
-    vector<string> out = lazy::From(vector<string>{"one"}).Unique();
+    vector<string> out = raman::From(vector<string>{"one"}).Unique();
     REQUIRE(out == vector<string>{"one"});
   }
 
   {
-    vector<string> out = lazy::From(vector<string>{"1", "2", "3"}).Unique();
+    vector<string> out = raman::From(vector<string>{"1", "2", "3"}).Unique();
     REQUIRE(out == vector<string>{"1", "2", "3"});
   }
 
   {
     vector<string> out =
-        lazy::From(vector<string>{"1", "2", "2", "2", "3", "2"}).Unique();
+        raman::From(vector<string>{"1", "2", "2", "2", "3", "2"}).Unique();
     REQUIRE(out == vector<string>{"1", "2", "3", "2"});
   }
 
   {
     vector<string> out =
-        lazy::From(vector<string>{"1", "2", "2", "2", "3", "2"})
+        raman::From(vector<string>{"1", "2", "2", "2", "3", "2"})
         .Sort()
         .Unique();
     REQUIRE(out == vector<string>{"1", "2", "3"});
@@ -794,7 +797,7 @@ TEST_CASE("Unique") {
 
   {
     vector<string> out =
-        lazy::From(vector<string>{"1", "2", "2", "2", "3", "2"})
+        raman::From(vector<string>{"1", "2", "2", "2", "3", "2"})
               .Sort()
               .Reverse()
               .Unique();
