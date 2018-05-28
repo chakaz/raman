@@ -24,8 +24,9 @@ Every usage of Raman begins by wrapping your range (be it a container or a pair
 of iterators) with `raman::From()`. You may use any STL or STL-like container /
 iterator.
 
-Once wrapped, you may use any of the utility functions below to manipulate
-your ranges, like `Where()`, `AddressOf()`, `Sort()`, `Reverse()`, etc.
+Once wrapped, you may use any of the utility functions in
+[raman.hpp](raman.hpp) to manipulate your ranges, like `Where()`,
+`AddressOf()`, `Sort()`, `Reverse()`, etc.
 
 
 Raman is designed to be used with range-based for loop, like:
@@ -40,7 +41,8 @@ Raman also has a convenient implicit-cast operator, so you can copy the
 manipulated range to any container, like:
 
 ```cpp
-vector<int> list_to_vector = raman::From(l);  // l is of type list<int>
+list<int> l = ...;
+vector<int> list_to_vector = raman::From(l).Where(<lambda>);
 ```
 
 Raman also supports move-semantics, so the following is safe:
@@ -56,8 +58,8 @@ In this case Raman will take ownership of the container returned by
 
 ## Getting Started
 
-Start by reading the comment in [raman.hpp](raman.hpp), then the test cases in
-[tests.cpp](tests.cpp).
+Start by reading the comment in the beginning of [raman.hpp](raman.hpp), then
+the test cases in [tests.cpp](tests.cpp).
 
 Now that you know roughly how to use Raman, simply `#include "raman.hpp"` and
 you're ready to go. No dependencies, no linking.
