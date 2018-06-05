@@ -589,6 +589,13 @@ TEST_CASE("Sort") {
   TestSort<deque<string>>({"1=one", "3=three", "2=two"});
 }
 
+TEST_CASE("operator->") {
+  vector<string> v = {"hello", "world"};
+  for (auto it = v.begin(); it != v.end(); ++it) {
+    REQUIRE(it->size() == 5);
+  }
+}
+
 template <typename ContainerTo, typename ContainerFrom>
 void TestCastToContainer(const ContainerFrom& in) {
   ContainerTo out = raman::From(in);

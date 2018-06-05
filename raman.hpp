@@ -197,6 +197,10 @@ namespace raman {
           return *iterator_;
         }
 
+        decltype(auto) operator->() const {
+          return *this;
+        }
+
         iterator& operator++() {
           RAMAN_ASSERT(iterator_ != range_->range_.end());
           ++iterator_;
@@ -312,6 +316,10 @@ namespace raman {
           return range_->transformer_.functor(*this->iterator_);
         }
 
+        auto operator->() const {
+          return *this;
+        }
+
         bool operator==(const iterator& o) const {
           return (range_ == o.range_ && this->iterator_ == o.iterator_);
         }
@@ -367,6 +375,10 @@ namespace raman {
         decltype(auto) operator*() const {
           RAMAN_ASSERT(this->iterator_ != range_->range_.end());
           return range_->transformer_.functor(*this->iterator_);
+        }
+
+        decltype(auto) operator->() const {
+          return *this;
         }
 
         bool operator==(const iterator& o) const {
@@ -463,6 +475,10 @@ namespace raman {
           RAMAN_ASSERT(iterator_ != range_->range_.end());
           RAMAN_ASSERT(!is_at_rend_);
           return *iterator_;
+        }
+
+        decltype(auto) operator->() const {
+          return *this;
         }
 
         iterator& operator++() {
